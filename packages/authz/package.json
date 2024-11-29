@@ -1,6 +1,6 @@
 {
   "name": "@nestjs-kitchen/authz",
-  "private": true,
+  "private": false,
   "description": "Nest TypeScript starter repository",
   "version": "1.0.0",
   "license": "MIT",
