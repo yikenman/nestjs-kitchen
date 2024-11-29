@@ -1,17 +1,21 @@
 {
   "name": "nestjs-kitchen",
-  "private": true,
+  "private": false,
   "version": "0.0.0",
   "scripts": {
     "build": "turbo run build",
+    "changeset": "changeset",
     "check": "syncpack format && syncpack lint",
     "dev": "turbo run dev",
     "format": "biome check .",
     "format:fix": "biome check . --write",
-    "prepare": "husky"
+    "prepare": "husky",
+    "publish-packages": "turbo run lint format build test && changeset version && changeset publish"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@changesets/cli": "^2.27.10",
+    "@changesets/config": "^3.0.4",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.10",
     "syncpack": "^13.0.0",
