@@ -1,8 +1,11 @@
 {
   "name": "@nestjs-kitchen/authz",
   "private": false,
-  "description": "Nest TypeScript starter repository",
+  "description": "Simplest authentication & authorization module in NextJS",
   "version": "1.0.0",
+  "homepage": "https://github.com/yikenman/nestjs-kitchen",
+  "repository": "https://github.com/yikenman/nestjs-kitchen",
+  "author": "yikenman",
   "license": "MIT",
   "exports": {
     ".": {
@@ -56,6 +59,9 @@
     "tsconfig-paths": "^4.2.0",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20.13.0"
   },
   "peerDependencies": {
     "@nestjs/common": "^10.4.12",

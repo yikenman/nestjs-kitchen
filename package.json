@@ -2,6 +2,10 @@
   "name": "nestjs-kitchen",
   "private": false,
   "version": "0.0.0",
+  "homepage": "https://github.com/yikenman/nestjs-kitchen",
+  "repository": "https://github.com/yikenman/nestjs-kitchen",
+  "author": "yikenman",
+  "license": "MIT",
   "scripts": {
     "build": "turbo run build",
     "changeset": "changeset",
