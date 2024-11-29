@@ -1,0 +1,8 @@
+{
+  "**/package.json": [
+    "pnpm run check"
+  ],
+  "**/*": [
+    "pnpm run format:fix"
+  ]
+}

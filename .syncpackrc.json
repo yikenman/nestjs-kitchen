@@ -1,0 +1,46 @@
+{
+  "$schema": "./node_modules/syncpack/dist/schema.json",
+  "lintFormatting": false,
+  "sortPackages": true,
+  "sortFirst": [
+    "name",
+    "private",
+    "description",
+    "version",
+    "author",
+    "license",
+    "exports",
+    "main",
+    "module",
+    "types",
+    "files",
+    "scripts"
+  ],
+  "semverGroups": [
+    {
+      "range": "^",
+      "dependencies": [
+        "!$LOCAL"
+      ],
+      "dependencyTypes": [
+        "dev",
+        "peer",
+        "prod"
+      ]
+    }
+  ],
+  "versionGroups": [
+    {
+      "label": "Use workspace protocol when developing local packages",
+      "dependencies": [
+        "$LOCAL"
+      ],
+      "dependencyTypes": [
+        "dev",
+        "peer",
+        "prod"
+      ],
+      "pinVersion": "workspace:*"
+    }
+  ]
+}
