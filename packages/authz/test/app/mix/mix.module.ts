@@ -1,0 +1,67 @@
+import { Module } from '@nestjs/common';
+import { ExtractJwt } from '../../../src';
+import { JwtAuthzModule1, JwtAuthzModule2 } from '../jwt.module';
+import { SessionAuthzModule3, SessionAuthzModule4 } from '../session.module';
+import { Jwt2UnderJwt1Controller } from './jwt-2-under-jwt-1.controller';
+import { JwtRefreshController } from './jwt-refresh.controller';
+import { JwtSessionAuthzController } from './jwt-session-authz.controller';
+import { JwtSessionRefreshController } from './jwt-session-refresh.controller';
+import { JwtUnderSessionController } from './jwt-under-session.controller';
+import { Session4UnderSession3Controller } from './session-4-under-session-3.controller';
+import { SessionUnderJwtController } from './session-under-jwt.controller';
+
+@Module({
+  imports: [
+    JwtAuthzModule1.register({
+      jwt: {
+        jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+        secret: '7890123456',
+        algorithm: 'HS256',
+        expiresIn: '1m'
+      },
+      refresh: {
+        jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+        secret: '65433210987',
+        algorithm: 'HS512'
+      },
+      routes: [Jwt2UnderJwt1Controller, JwtUnderSessionController, SessionUnderJwtController, JwtRefreshController]
+    }),
+    JwtAuthzModule2.register({
+      jwt: {
+        jwtFromRequest: [ExtractJwt.fromUrlQueryParameter('token'), ExtractJwt.fromAuthHeaderAsBearerToken()],
+        secret: '8901234567',
+        algorithm: 'HS256'
+      },
+      routes: ['/mix/jwt-2-under-jwt-1', JwtSessionRefreshController, JwtSessionAuthzController]
+    }),
+    SessionAuthzModule3.register({
+      session: {
+        name: 'session-id-9012345678',
+        secret: '9012345678'
+      },
+      routes: [
+        Session4UnderSession3Controller,
+        '/mix/session-under-jwt',
+        '/mix/jwt-under-session',
+        '/mix/jwt-session-refresh'
+      ]
+    }),
+    SessionAuthzModule4.register({
+      session: {
+        name: 'session-id-0123456789',
+        secret: '0123456789'
+      },
+      routes: ['/mix/session-4-under-session-3', '/mix/jwt-session-authz']
+    })
+  ],
+  controllers: [
+    Jwt2UnderJwt1Controller,
+    JwtUnderSessionController,
+    Session4UnderSession3Controller,
+    SessionUnderJwtController,
+    JwtRefreshController,
+    JwtSessionRefreshController,
+    JwtSessionAuthzController
+  ]
+})
+export class MixModule {}
