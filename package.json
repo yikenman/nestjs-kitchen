@@ -14,7 +14,8 @@
     "format": "biome check .",
     "format:fix": "biome check . --write",
     "prepare": "husky",
-    "publish-packages": "turbo run lint format build test && changeset version && changeset publish"
+    "publish-packages": "changeset publish",
+    "test": "turbo run test:cov test:e2e"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
