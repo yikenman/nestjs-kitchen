@@ -1,6 +1,7 @@
 {
   "name": "nestjs-kitchen",
   "private": false,
+  "description": "Convenient tools to cook up your NextJS application",
   "version": "0.0.0",
   "homepage": "https://github.com/yikenman/nestjs-kitchen",
   "repository": "https://github.com/yikenman/nestjs-kitchen",
