@@ -23,6 +23,11 @@ export interface JwtFromRequestFunction<T = any> {
   (req: T): string | null;
 }
 
+/**
+ * Utility factory function for creating extractor functions that retrieve JWT from HTTP requests.
+ *
+ * Same as `passportjs` [jwt extractors](https://www.passportjs.org/packages/passport-jwt/#included-extractors)
+ */
 export const ExtractJwt = {
   /**
    * Creates an extractor function to retrieve a token from the request header.

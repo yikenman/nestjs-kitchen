@@ -21,6 +21,10 @@ export type IsUnknown<T> = unknown extends T // `T` can be `unknown` or `any`
     : false
   : false;
 
+export type DeepReadonly<T> = {
+  readonly [K in keyof T]: T[K] extends object ? DeepReadonly<T[K]> : T[K];
+};
+
 export type CookieOptionsWithSecret = CookieOptions & {
   /**
    * a string or array used to sign cookies.
@@ -29,7 +33,13 @@ export type CookieOptionsWithSecret = CookieOptions & {
 };
 
 export interface AuthzDecoBaseOptions {
+  /**
+   * When set, overrides the previous metadatas during the authorization, instead of inheriting.
+   */
   override?: boolean;
+  /**
+   * When set, authorization & authentication will be bypassed if authentication returns empty.
+   */
   allowAnonymous?: boolean;
 }
 
@@ -59,18 +69,50 @@ export type AbstractConstructor<T, T1, T2> = new (...args: any[]) => T & AuthzPr
 export type MethodParameters<T, Method extends keyof T> = T[Method] extends (...args: infer P) => any ? P : never;
 
 export interface AuthzModuleBaseOptions {
+  /**
+   * Property name for registering authenticated user on the HTTP request object.
+   *
+   * @default 'user'
+   */
   passportProperty: string;
+  /**
+   * When set, the current metadata will override previous metadatas during the authorization by default, instead of inheriting.
+   *
+   * @default false
+   */
   defaultOverride: boolean;
+  /**
+   * When set, empty metadata will be `ignored` by default during the authorization.
+   *
+   * @default false
+   */
   skipFalsyMetadata: boolean;
+  /**
+   * When set, authorization & authentication will be bypassed by default if authentication returns empty.
+   *
+   * @default false
+   */
   defaultAllowAnonymous: boolean;
 }
 
 export type AuthzModuleRoutesOptions = {
+  /**
+   * When enabled, becomes a global module and will apply strategy to all routes in the application.
+   *
+   * Note: This option conflicts with the `routes` option.
+   *
+   * @default false
+   */
   global?: boolean;
   /**
-   * Note: DO NOT register the same controller in different modules, their middlewares will not work properly. This is an Nest.js design. Pleases use string instead if requires.
+   * Applies strategy to the specified controllers/routes.
+   *
+   * Note: This option conflicts with the `global` option.
    */
   routes?: SingleOrArray<string | Type | RouteInfo>;
+  /**
+   * Whitelists the specified controllers/routes listed in `routes` options.
+   */
   excludes?: SingleOrArray<string | RouteInfo>;
 };
 
