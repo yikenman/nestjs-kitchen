@@ -2,7 +2,6 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthzGuard1, JwtAuthzService1 } from '../jwt.module';
 
 @UseGuards(JwtAuthzGuard1)
-@JwtAuthzGuard1.Verify()
 @Controller('apply-on-class')
 export class ApplyOnClassController {
   constructor(private readonly service: JwtAuthzService1) {}
