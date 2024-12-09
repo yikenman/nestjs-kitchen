@@ -5,14 +5,40 @@ import type { JwtFromRequestFunction } from './extract-jwt';
 
 export type JwtOptions = Omit<VerifyOptions, 'algorithms' | 'audience' | 'issuer'> &
   SignOptions & {
+    /**
+     * Function that accepts a request as the only parameter and returns either the JWT as a string or null.
+     *
+     * Same as `passport-jwt` [jwtFromRequest option](https://www.passportjs.org/packages/passport-jwt/#configure-strategy).
+     */
     jwtFromRequest: JwtFromRequestFunction | JwtFromRequestFunction[];
+    /**
+     * Secret string used for HMAC algorithms.
+     */
     secret?: Secret;
+    /**
+     * PEM-encoded private key used for RSA and ECDSA algorithms.
+     */
     privateKey?: PrivateKey;
+    /**
+     * PEM-encoded public key corresponding to the `privateKey` used for RSA and ECDSA algorithms.
+     */
     publicKey?: PublicKey;
   };
 
 export type JwtAuthzModuleOptions = Partial<AuthzModuleBaseOptions> & {
+  /**
+   * JWT sign & verify options.
+   *
+   * This combines `jsonwebtoken` [sign options](https://www.npmjs.com/package/jsonwebtoken#jwtsignpayload-secretorprivatekey-options-callback)
+   * and [verify options](https://www.npmjs.com/package/jsonwebtoken#jwtverifytoken-secretorpublickey-options-callback).
+   */
   jwt: JwtOptions;
+  /**
+   * Refresh token sign & verify options.
+   *
+   * This combines `jsonwebtoken` [sign options](https://www.npmjs.com/package/jsonwebtoken#jwtsignpayload-secretorprivatekey-options-callback)
+   * and [verify options](https://www.npmjs.com/package/jsonwebtoken#jwtverifytoken-secretorpublickey-options-callback).
+   */
   refresh?: JwtOptions;
 };
 

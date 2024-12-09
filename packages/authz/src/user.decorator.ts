@@ -8,4 +8,20 @@ export const userDecoratorFactory = (_data: unknown, ctx: ExecutionContext) => {
   return getPassportProperty<unknown>(request);
 };
 
+/**
+ * Retrieves the current user associated with the request, if available.
+ *
+ * ### Usage
+ *
+ * ```typescript
+ * ⁣@UseGuards(AuthzGuard)
+ * ⁣@Controller(/⁣/ ...)
+ * export class BusinessController {
+ *  ⁣@Get()
+ *  async method(@User() user: User) {
+ *    // ...
+ *  }
+ * }
+ * ```
+ */
 export const User = createParamDecorator(userDecoratorFactory);
