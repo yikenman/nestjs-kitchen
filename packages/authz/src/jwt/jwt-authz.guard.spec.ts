@@ -352,7 +352,7 @@ describe('Jwt Authz Guard', () => {
       expect(result).toBe(true);
     });
 
-    it('should bypass if AuthzMetaParams is empry', async () => {
+    it('should call super.canActivate if AuthzMetaParams is empty', async () => {
       jwtAuthzOptions.defaultAllowAnonymous = false;
       jwtAuthzOptions.refresh = undefined;
 
@@ -378,21 +378,33 @@ describe('Jwt Authz Guard', () => {
         skipFalsyMetadata: jwtAuthzOptions.skipFalsyMetadata
       });
 
-      expect(getAllowAnonymous).not.toHaveBeenCalled();
-      expect(mockSuperCanActivate).not.toHaveBeenCalled();
-      expect(getPassportProperty).not.toHaveBeenCalled();
+      expect(getAllowAnonymous).toHaveBeenCalledTimes(1);
+      expect(getAllowAnonymous).toHaveBeenCalledWith([], {
+        defaultAllowAnonymous: jwtAuthzOptions.defaultAllowAnonymous
+      });
+
+      expect(store.allowAnonymous).toEqual(jest.mocked(getAllowAnonymous).mock.results[0].value);
+
+      expect(mockSuperCanActivate).toHaveBeenCalledTimes(1);
+      expect(mockSuperCanActivate).toHaveBeenCalledWith(context);
+
+      expect(getPassportProperty).toHaveBeenCalledTimes(1);
+      expect(getPassportProperty).toHaveBeenCalledWith(mockedRequest);
+
       expect(mockAuthzProvider.authorize).not.toHaveBeenCalled();
 
       expect(store.guardResult).toBeUndefined();
       expect(result).toBe(true);
     });
 
-    it('should bypass if AuthzProvider.authorize is not implemented', async () => {
+    it('should bypass if public is true in the last AuthzMetaParams', async () => {
       jwtAuthzOptions.defaultAllowAnonymous = false;
       jwtAuthzOptions.refresh = undefined;
-      mockAuthzProvider.authorize = undefined;
 
-      const contextParamsList = [{ metaData: 'META_DATA_1' }, { metaData: 'META_DATA_2' }] as AuthzMetaParams[];
+      const contextParamsList = [
+        { metaData: 'META_DATA_1' },
+        { metaData: 'META_DATA_2', options: { public: true } }
+      ] as AuthzMetaParams[];
 
       const mockedGetAll = jest.spyOn(reflector, 'getAll');
       // JWT_REFRESH_META_KEY
@@ -400,25 +412,28 @@ describe('Jwt Authz Guard', () => {
       // JWT_META_KEY
       mockedGetAll.mockReturnValueOnce(contextParamsList);
 
-      jest.mocked(getAllowAnonymous).mockReturnValue(false);
-
-      jest.mocked(getPassportProperty).mockReturnValue(user);
+      mockAuthzProvider.authorize = jest.fn().mockResolvedValue(true);
 
       const context = createMockExecutionContext();
 
       const result = await jwtAuthzGuard.canActivate(context);
 
-      expect(mockSuperCanActivate).toHaveBeenCalledTimes(1);
-      expect(mockSuperCanActivate).toHaveBeenCalledWith(context);
+      expect(getAlsStore).toHaveBeenCalled();
+      expect(mockedGetAll).toHaveBeenCalled();
+      expect(normalizedArray).toHaveBeenCalled();
 
+      expect(getContextAuthzMetaParamsList).not.toHaveBeenCalled();
+      expect(getAllowAnonymous).not.toHaveBeenCalled();
+      expect(mockSuperCanActivate).not.toHaveBeenCalled();
       expect(getPassportProperty).not.toHaveBeenCalled();
+      expect(mockAuthzProvider.authorize).not.toHaveBeenCalled();
 
-      expect(store.guardResult).toEqual(result);
+      expect(store.guardResult).toBe(true);
       expect(result).toBe(true);
     });
 
-    it('should bypass if user is not defined & allowAnonymous is configured', async () => {
-      jwtAuthzOptions.defaultAllowAnonymous = true;
+    it('should skip authorize method if user is not defined & allowAnonymous is true', async () => {
+      jwtAuthzOptions.defaultAllowAnonymous = false;
       jwtAuthzOptions.refresh = undefined;
 
       const contextParamsList = [
@@ -451,7 +466,38 @@ describe('Jwt Authz Guard', () => {
       expect(result).toBe(true);
     });
 
-    it('should not bypass if user is defined & allowAnonymous is configured', async () => {
+    it('should skip authorize method if user is not defined & defaultAllowAnonymous is true', async () => {
+      jwtAuthzOptions.defaultAllowAnonymous = true;
+      jwtAuthzOptions.refresh = undefined;
+
+      const contextParamsList = [{ metaData: 'META_DATA_1' }, { metaData: 'META_DATA_2' }] as AuthzMetaParams[];
+
+      const mockedGetAll = jest.spyOn(reflector, 'getAll');
+      // JWT_REFRESH_META_KEY
+      mockedGetAll.mockReturnValueOnce([]);
+      // JWT_META_KEY
+      mockedGetAll.mockReturnValueOnce(contextParamsList);
+
+      mockAuthzProvider.authorize = jest.fn().mockResolvedValue(true);
+
+      jest.mocked(getAllowAnonymous).mockReturnValue(true);
+
+      jest.mocked(getPassportProperty).mockReturnValue(undefined);
+
+      const context = createMockExecutionContext();
+
+      const result = await jwtAuthzGuard.canActivate(context);
+
+      expect(getPassportProperty).toHaveBeenCalledTimes(1);
+      expect(getPassportProperty).toHaveBeenCalledWith(mockedRequest);
+
+      expect(mockAuthzProvider.authorize).not.toHaveBeenCalled();
+
+      expect(store.guardResult).toBeUndefined();
+      expect(result).toBe(true);
+    });
+
+    it('should not skip authorize method if user is defined & allowAnonymous is true', async () => {
       jwtAuthzOptions.defaultAllowAnonymous = true;
       jwtAuthzOptions.refresh = undefined;
 
