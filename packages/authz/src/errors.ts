@@ -1,3 +1,6 @@
+/**
+ * Internal error type.
+ */
 export class AuthzError extends Error {
   cause?: unknown;
 
@@ -9,6 +12,9 @@ export class AuthzError extends Error {
   }
 }
 
+/**
+ * Internal error type for verification error.
+ */
 export class AuthzVerificationError extends AuthzError {
   constructor(message?: string, cause?: unknown) {
     super(message, cause);
@@ -16,6 +22,9 @@ export class AuthzVerificationError extends AuthzError {
   }
 }
 
+/**
+ * Internal error type for anonymous error.
+ */
 export class AuthzAnonymousError extends AuthzError {
   constructor(message?: string, cause?: unknown) {
     super(message, cause);

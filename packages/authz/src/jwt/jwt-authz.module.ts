@@ -97,6 +97,13 @@ const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN, ASYNC_OPTIONS_TYPE, OPTIO
     )
     .build();
 
+/**
+ * Creates a JWT module along with its associated guard and service,
+ * with types inferred from the provided implementation of `AuthzProviderClass`.
+ *
+ * @param authzProvider - The implementation class of `AuthzProviderClass`
+ * @returns \{AuthzModule, AuthzGuard, AuthzService}
+ */
 export const createJwtAuthzModule = <P, U, T extends AuthzProviderClass<P, U>>(
   authzProvider: AbstractConstructor<T, P, U>
 ) => {
@@ -140,12 +147,76 @@ export const createJwtAuthzModule = <P, U, T extends AuthzProviderClass<P, U>>(
     JWT_META_KEY,
     JWT_REFRESH_META_KEY
   ]) as ReturnType<typeof createJwtAuthzGuard> & {
+    /**
+     * Verifies the user's authorization for specific meta data.
+     *
+     * ### Usage
+     *
+     * ```typescript
+     * ⁣@UseGuards(AuthzGuard)
+     * ⁣@Controller(/⁣/ ...)
+     * export class BusinessController {
+     *  ⁣@AuthzGuard.Verify(/⁣/ mata datas used to authorize user)
+     *  ⁣@Get()
+     *  async method() {
+     *    // ...
+     *  }
+     * }
+     * ```
+     */
     Verify: typeof Verify;
+    /**
+     * Skips authentication & authorization checks for specific routes.
+     *
+     * ### Usage
+     *
+     * ```typescript
+     * ⁣@UseGuards(AuthzGuard)
+     * ⁣@Controller(/⁣/ ...)
+     * export class BusinessController {
+     *  ⁣@AuthzGuard.NoVerify()
+     *  ⁣@Get()
+     *  async publicMethod() {
+     *    // ...
+     *  }
+     * }
+     * ```
+     */
     NoVerify: typeof NoVerify;
     /**
-     * take highest priority
+     * Ensures that only the refresh token is used for authentication on specific routes, for refreshing JWT tokens.
+     *
+     * ### Usage
+     *
+     * ```typescript
+     * ⁣@UseGuards(AuthzGuard)
+     * ⁣@Controller(/⁣/ ...)
+     * export class BusinessController {
+     *  ⁣@AuthzGuard.Refresh()
+     *  ⁣@Get()
+     *  async refreshToken() {
+     *    // ...
+     *  }
+     * }
+     * ```
      */
     Refresh: typeof Refresh;
+    /**
+     * A simplified version of `@UseGuards(AuthzGuard)` and `@AuthzGuard.Verify()`, combining both for convenience
+     *
+     * ### Usage
+     *
+     * ```typescript
+     * ⁣@Controller(/⁣/ ...)
+     * export class BusinessController {
+     *   ⁣@AuthzGuard.Apply(/⁣/ mata datas used to authorize user)
+     *   ⁣@Get()
+     *   async refreshToken() {
+     *     // ...
+     *   }
+     * }
+     * ```
+     */
     Apply: typeof Apply;
   };
 
@@ -197,6 +268,9 @@ export const createJwtAuthzModule = <P, U, T extends AuthzProviderClass<P, U>>(
 
   @Module({})
   class JwtAuthzModule extends ConfigurableModuleClass implements NestModule {
+    /**
+     * Configures authz module.
+     */
     static register(options: Omit<typeof OPTIONS_TYPE, 'authzProvider'>): DynamicModule {
       const jwtAuthzOptions = normalizedJwtAuthzModuleOptions(options);
 
@@ -209,7 +283,9 @@ export const createJwtAuthzModule = <P, U, T extends AuthzProviderClass<P, U>>(
         ]
       });
     }
-
+    /**
+     * Configures authz module asynchronously.
+     */
     static registerAsync(options: Omit<typeof ASYNC_OPTIONS_TYPE, 'authzProvider'>): DynamicModule {
       return mergeDynamicModuleConfigs(super.registerAsync({ ...options, authzProvider }), getCommonConfigs(), {
         providers: [
@@ -241,8 +317,66 @@ export const createJwtAuthzModule = <P, U, T extends AuthzProviderClass<P, U>>(
   }
 
   return {
+    /**
+     * A dynamic module used to configure JWT based authentication and authorization features for the application.
+     *
+     * This module can be configured using 2 static methods:
+     *
+     * - `register`
+     * - `registerAsync`
+     *
+     * ### Usage
+     *
+     * ```typescript
+     * ⁣@Module({
+     *   imports: [
+     *     // Import and configure JWT strategy
+     *     AuthzModule.register({
+     *       jwt: {
+     *         jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+     *         secret: '1234567890',
+     *         algorithm: 'HS256'
+     *       },
+     *       // Enable refresh token handling
+     *       refresh: {
+     *         jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+     *         secret: '0987654321',
+     *         algorithm: 'HS256'
+     *       },
+     *       // Apply strategy to specific controllers.
+     *       routes: [BusinessController]
+     *     })
+     *   ],
+     *   controllers: [BusinessController]
+     * })
+     * export class BusinessModule {}
+     * ```
+     */
     AuthzModule: JwtAuthzModule,
+    /**
+     * A custom guard that applies authentication to controllers.
+     *
+     * This guard also provides 4 utility decorators to apply and modify authorization:
+     *
+     * - `@AuthzGuard.Verify`: Used to verify the user's authorization for specific meta data.
+     * - `@AuthzGuard.NoVerify`: Used to `skip` authentication & authorization checks for specific routes.
+     * - `@AuthzGuard.Apply`: A simplified version of `@UseGuards(AuthzGuard)` and `@AuthzGuard.Verify`, combining both for convenience.
+     * - `@AuthzGuard.Refresh`: Used to ensure that only using refresh token for authentication on specific routes, for refreshing JWT tokens.
+     *
+     * ### Usage:
+     *
+     * ```typescript
+     * ⁣@UseGuards(AuthzGuard)
+     * ⁣@Controller(/⁣/ ...)
+     * export class BusinessController {
+     *   // ...
+     * }
+     * ```
+     */
     AuthzGuard: JwtAuthzGuard,
+    /**
+     * A custom servcie to provide methods to handle authentication and authorization.
+     */
     AuthzService: JwtAuthzService
   };
 };
