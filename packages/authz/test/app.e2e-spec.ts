@@ -38,6 +38,15 @@ describe('E2E test', () => {
 
     bases.forEach(([desc, base]) => {
       describe(desc, () => {
+        it('should fail to retrieve user data without JWT', async () => {
+          const res = await request(app.getHttpServer()).get(`${base}/get-user`);
+
+          expect(res.statusCode).not.toEqual(200);
+          expect(res.body).not.toEqual({
+            userId1: userId
+          });
+        });
+
         it('should log in successfully and retrieve user data (GET)', async () => {
           const res = await request(app.getHttpServer())
             .get(`${base}/log-in?userId=${userId}`)
@@ -64,6 +73,15 @@ describe('E2E test', () => {
 
     bases.forEach(([desc, base]) => {
       describe(desc, () => {
+        it('should fail to retrieve user data without session', async () => {
+          const res = await request(app.getHttpServer()).get(`${base}/get-user`);
+
+          expect(res.statusCode).not.toEqual(200);
+          expect(res.body).not.toEqual({
+            userId1: userId
+          });
+        });
+
         it('should log in successfully and retrieve user data (GET)', async () => {
           const res = await request(app.getHttpServer())
             .get(`${base}/log-in?userId=${userId}`)

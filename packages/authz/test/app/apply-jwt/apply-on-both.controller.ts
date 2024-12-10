@@ -2,7 +2,6 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthzGuard1, JwtAuthzService1 } from '../jwt.module';
 
 @UseGuards(JwtAuthzGuard1)
-@JwtAuthzGuard1.Verify()
 @Controller('apply-on-both')
 export class ApplyOnBothController {
   constructor(private readonly service: JwtAuthzService1) {}
@@ -17,7 +16,7 @@ export class ApplyOnBothController {
     return result;
   }
 
-  @JwtAuthzGuard1.Verify()
+  @UseGuards(JwtAuthzGuard1)
   @Get('get-user')
   async getUser() {
     const user = await this.service.getUser();
