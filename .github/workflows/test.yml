@@ -55,12 +55,13 @@ jobs:
       - name: Install Dependencies
         run: pnpm i
 
-      - name: Run Test
+      - name: Run Test Parallel
         run: pnpm run test --filter=${{ matrix.name }}...
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
+          debug: true
           flag-name: ${{ matrix.name }}
           base-path: ${{ matrix.path }}
           allow-empty: true
@@ -71,8 +72,12 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-    - name: Coveralls Finished
-      uses: coverallsapp/github-action@v2
-      with:
-        parallel-finished: true
-        carryforward: ${{ join(fromJSON(needs.list.outputs.package).*.name) }}
+      - name: Debug
+        run: echo ${{ join(fromJSON(needs.list.outputs.package).*.name) }}
+    
+      - name: Coveralls Finished
+        uses: coverallsapp/github-action@v2
+        with:
+          debug: true
+          parallel-finished: true
+          carryforward: ${{ join(fromJSON(needs.list.outputs.package).*.name) }}
