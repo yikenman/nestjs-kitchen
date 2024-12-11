@@ -58,6 +58,9 @@ jobs:
       - name: Run Test Parallel
         run: pnpm run test --filter=${{ matrix.name }}...
 
+      - name: Debug
+        run: ls -la packages/authz
+
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
