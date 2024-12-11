@@ -58,15 +58,10 @@ jobs:
       - name: Run Test Parallel
         run: pnpm run test --filter=${{ matrix.name }}...
 
-      - name: Debug
-        run: ls -la packages/authz
-
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          debug: true
           flag-name: ${{ matrix.name }}
-          base-path: ${{ matrix.path }}
           allow-empty: true
           parallel: true
 
@@ -81,6 +76,5 @@ jobs:
       - name: Coveralls Finished
         uses: coverallsapp/github-action@v2
         with:
-          debug: true
           parallel-finished: true
           carryforward: ${{ join(fromJSON(needs.list.outputs.package).*.name) }}
