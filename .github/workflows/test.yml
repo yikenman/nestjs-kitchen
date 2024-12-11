@@ -3,9 +3,35 @@ name: Test
 on: [pull_request]
 
 jobs:
+
+  list:
+    name: List
+    runs-on: ubuntu-latest
+    outputs:
+      package: ${{ steps.turbo-ls.outputs.package }}
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Run turbo ls
+        id: turbo-ls
+        run: |
+          ls_output=$(npx turbo ls --output=json)
+          ls_json=$(echo "$ls_output" | jq -c '.packages.items')
+          echo "package=$ls_json" >> $GITHUB_OUTPUT
+
   test:
+    needs: list
     name: Test
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include: ${{ fromJSON(needs.list.outputs.package) }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -26,10 +52,26 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
-      - name: Install Dependencies & Run Tests
-        run: |
-            pnpm i
-            pnpm test
+      - name: Install Dependencies
+        run: pnpm i
 
-      - name: Run Coveralls
+      - name: Run Test
+        run: pnpm test --filter=${{ matrix.name }}...
+
+      - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
+        with:
+          flag-name: ${{ matrix.name }}
+          file: ${{matrix.path}}
+          parallel: true
+
+  finish:
+    needs: [list, test]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Coveralls Finished
+      uses: coverallsapp/github-action@v2
+      with:
+        parallel-finished: true
+        carryforward: ${{ join(fromJSON(needs.list.outputs.package).*.name) }}
