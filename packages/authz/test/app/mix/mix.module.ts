@@ -32,7 +32,7 @@ import { SessionUnderJwtController } from './session-under-jwt.controller';
         secret: '8901234567',
         algorithm: 'HS256'
       },
-      routes: ['/mix/jwt-2-under-jwt-1', JwtSessionRefreshController, JwtSessionAuthzController]
+      routes: [Jwt2UnderJwt1Controller, JwtSessionRefreshController, JwtSessionAuthzController]
     }),
     SessionAuthzModule3.register({
       session: {
@@ -41,9 +41,9 @@ import { SessionUnderJwtController } from './session-under-jwt.controller';
       },
       routes: [
         Session4UnderSession3Controller,
-        '/mix/session-under-jwt',
-        '/mix/jwt-under-session',
-        '/mix/jwt-session-refresh'
+        SessionUnderJwtController,
+        JwtUnderSessionController,
+        JwtSessionRefreshController
       ]
     }),
     SessionAuthzModule4.register({
@@ -51,7 +51,7 @@ import { SessionUnderJwtController } from './session-under-jwt.controller';
         name: 'session-id-0123456789',
         secret: '0123456789'
       },
-      routes: ['/mix/session-4-under-session-3', '/mix/jwt-session-authz']
+      routes: [Session4UnderSession3Controller, JwtSessionAuthzController]
     })
   ],
   controllers: [

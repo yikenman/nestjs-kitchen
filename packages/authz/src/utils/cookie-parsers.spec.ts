@@ -3,7 +3,7 @@ import cookieParser from 'cookie-parser';
 import type { Request } from 'express';
 import { customCookieParser, normalCookieParser } from './cookie-parsers';
 
-jest.mock('Cookie', () => {
+jest.mock('cookie', () => {
   const actual = jest.requireActual('cookie');
 
   return {

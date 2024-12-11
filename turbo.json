@@ -16,6 +16,9 @@
     "test:cov": {
       "dependsOn": [
         "^build"
+      ],
+      "outputs": [
+        "coverage/**"
       ]
     },
     "test:e2e": {
@@ -25,7 +28,10 @@
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "dependsOn": [
+        "^build"
+      ]
     }
   }
 }

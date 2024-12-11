@@ -1,11 +1,43 @@
 name: Test
 
-on: [pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
+
+  list:
+    name: List
+    runs-on: ubuntu-latest
+    outputs:
+      package: ${{ steps.turbo-ls.outputs.package }}
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Run turbo ls
+        id: turbo-ls
+        run: |
+          ls_output=$(npx turbo ls --output=json)
+          ls_json=$(echo "$ls_output" | jq -c '.packages.items')
+          echo "package=$ls_json" >> $GITHUB_OUTPUT
+
   test:
+    needs: list
     name: Test
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include: ${{ fromJSON(needs.list.outputs.package) }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -26,10 +58,33 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
-      - name: Install Dependencies & Run Tests
-        run: |
-            pnpm i
-            pnpm test
+      - name: Install Dependencies
+        run: pnpm i
 
-      - name: Run Coveralls
-        uses: coverallsapp/github-action@v2
+      - name: Run Test Parallel
+        run: pnpm run test --filter=${{ matrix.name }}...
+
+      - name: Codecov Parallel
+        uses: codecov/codecov-action@v5
+        with:
+          fail_ci_if_error: true
+          flags: ${{ matrix.name }}
+          directory: ${{ matrix.path }}
+          handle_no_reports_found: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  results:
+    needs: test
+    name: Final Results
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      - run: |
+          result="${{ needs.test.result }}"
+          if [[ $result == "success" || $result == "skipped" ]]; then
+            exit 0
+          else
+            exit 1
+          fi
+

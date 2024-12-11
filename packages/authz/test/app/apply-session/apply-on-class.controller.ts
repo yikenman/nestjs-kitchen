@@ -2,7 +2,6 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { SessionAuthzGuard3, SessionAuthzService3 } from '../session.module';
 
 @UseGuards(SessionAuthzGuard3)
-@SessionAuthzGuard3.Verify()
 @Controller('apply-on-class')
 export class ApplyOnClassController {
   constructor(private readonly service: SessionAuthzService3) {}

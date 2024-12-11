@@ -6,6 +6,7 @@ describe('Index', () => {
     expect(index).toHaveProperty('User');
     expect(index).toHaveProperty('AuthzError');
     expect(index).toHaveProperty('AuthzVerificationError');
+    expect(index).toHaveProperty('AuthzAnonymousError');
     expect(index).toHaveProperty('ExtractJwt');
     expect(index).toHaveProperty('createJwtAuthzModule');
     expect(index).toHaveProperty('cereateSessionAuthzModule');
