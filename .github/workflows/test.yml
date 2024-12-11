@@ -1,6 +1,12 @@
 name: Test
 
-on: [pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
 
@@ -67,4 +73,18 @@ jobs:
           handle_no_reports_found: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  results:
+    needs: test
+    name: Final Results
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      - run: |
+          result="${{ needs.test.result }}"
+          if [[ $result == "success" || $result == "skipped" ]]; then
+            exit 0
+          else
+            exit 1
+          fi
 
