@@ -95,6 +95,13 @@ const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN, ASYNC_OPTIONS_TYPE, OPTIO
     )
     .build();
 
+/**
+ * Creates a session module along with its associated guard and service,
+ * with types inferred from the provided implementation of `AuthzProviderClass`.
+ *
+ * @param authzProvider - The implementation class of `AuthzProviderClass`
+ * @returns \{AuthzModule, AuthzGuard, AuthzService}
+ */
 export const cereateSessionAuthzModule = <P, U, T extends AuthzProviderClass<P, U>>(
   authzProvider: AbstractConstructor<T, P, U>
 ) => {
@@ -132,8 +139,58 @@ export const cereateSessionAuthzModule = <P, U, T extends AuthzProviderClass<P, 
     ALS_PROVIDER,
     SESSION_META_KEY
   ]) as ReturnType<typeof createSessionAuthzGuard> & {
+    /**
+     * Verifies the user's authorization for specific meta data.
+     *
+     * ### Usage
+     *
+     * ```typescript
+     * ⁣@UseGuards(AuthzGuard)
+     * ⁣@Controller(/⁣/ ...)
+     * export class BusinessController {
+     *  ⁣@AuthzGuard.Verify(/⁣/ mata datas used to authorize user)
+     *  ⁣@Get()
+     *  async method() {
+     *    // ...
+     *  }
+     * }
+     * ```
+     */
     Verify: typeof Verify;
+    /**
+     * Skips authentication & authorization checks for specific routes.
+     *
+     * ### Usage
+     *
+     * ```typescript
+     * ⁣@UseGuards(AuthzGuard)
+     * ⁣@Controller(/⁣/ ...)
+     * export class BusinessController {
+     *  ⁣@AuthzGuard.NoVerify()
+     *  ⁣@Get()
+     *  async publicMethod() {
+     *    // ...
+     *  }
+     * }
+     * ```
+     */
     NoVerify: typeof NoVerify;
+    /**
+     * A simplified version of `@UseGuards(AuthzGuard)` and `@AuthzGuard.Verify()`, combining both for convenience
+     *
+     * ### Usage
+     *
+     * ```typescript
+     * ⁣@Controller(/⁣/ ...)
+     * export class BusinessController {
+     *   ⁣@AuthzGuard.Apply(/⁣/ mata datas used to authorize user)
+     *   ⁣@Get()
+     *   async refreshToken() {
+     *     // ...
+     *   }
+     * }
+     * ```
+     */
     Apply: typeof Apply;
   };
 
@@ -177,7 +234,9 @@ export const cereateSessionAuthzModule = <P, U, T extends AuthzProviderClass<P, 
   @Module({})
   class SessionAuthzModule extends ConfigurableModuleClass implements NestModule {
     /**
-     * Note: DO NOT register the same route in multiple session authz modules, or import the same session authz module in the same module multiple times, express-session middleware will not work properly.
+     * Configures authz module.
+     *
+     * Note: DO NOT register the same routes in multiple session authz modules, or import the same session authz module in the same module multiple times, express-session middleware will not work properly.
      */
     static register(options: Omit<typeof OPTIONS_TYPE, 'authzProvider'>): DynamicModule {
       const sessionAuthzOptions = normalizedSessionAuthzModuleOptions(options);
@@ -193,7 +252,9 @@ export const cereateSessionAuthzModule = <P, U, T extends AuthzProviderClass<P, 
     }
 
     /**
-     * Note: DO NOT register the same route in multiple session authz modules, express-session middleware will not work properly.
+     * Configures authz module asynchronously.
+     *
+     * Note: DO NOT register the same routes in multiple session authz modules, express-session middleware will not work properly.
      */
     static registerAsync(options: typeof ASYNC_OPTIONS_TYPE): DynamicModule {
       return mergeDynamicModuleConfigs(super.registerAsync({ ...options, authzProvider }), getCommonConfigs(), {
@@ -227,8 +288,58 @@ export const cereateSessionAuthzModule = <P, U, T extends AuthzProviderClass<P, 
   }
 
   return {
+    /**
+     * A dynamic module used to configure session based authentication and authorization features for the application.
+     *
+     * This module can be configured using 2 static methods:
+     *
+     * - `register`
+     * - `registerAsync`
+     *
+     * ### Usage
+     *
+     * ```typescript
+     * ⁣@Module({
+     *   imports: [
+     *     // Import and configure session strategy
+     *     AuthzModule.register({
+     *       session: {
+     *         name: 'custom-session-id-name',
+     *         secret: '1234567890'
+     *       },
+     *       // Define routes that use AuthzGuard
+     *       routes: [BusinessController]
+     *     })
+     *   ],
+     *   controllers: [BusinessController]
+     * })
+     * export class BusinessModule {}
+     * ```
+     */
     AuthzModule: SessionAuthzModule,
+    /**
+     * A custom guard that applies authentication to controllers.
+     *
+     * This guard also provides 3 utility decorators to apply and modify authorization:
+     *
+     * - `@AuthzGuard.Verify`: Used to verify the user's authorization for specific meta data.
+     * - `@AuthzGuard.NoVerify`: Used to `skip` authentication & authorization checks for specific routes.
+     * - `@AuthzGuard.Apply`: A simplified version of `@UseGuards(AuthzGuard)` and `@AuthzGuard.Verify`, combining both for convenience.
+     *
+     * ### Usage:
+     *
+     * ```typescript
+     * ⁣@UseGuards(AuthzGuard)
+     * ⁣@Controller(/⁣/ ...)
+     * export class BusinessController {
+     *   // ...
+     * }
+     * ```
+     */
     AuthzGuard: SessionAuthzGuard,
+    /**
+     * A custom servcie to provide methods to handle authentication and authorization.
+     */
     AuthzService: SessionAuthzService
   };
 };

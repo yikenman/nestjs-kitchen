@@ -82,15 +82,16 @@ export const createSessionAuthzGuard = ([
         this.reflector.getAll<AuthzMetaParams[]>(SESSION_META_KEY, [context.getClass(), context.getHandler()])
       );
 
+      // bypass if last meta is public
+      if (paramsList.length && Boolean(paramsList[paramsList.length - 1].options?.public)) {
+        store.guardResult = true;
+        return true;
+      }
+
       const contextParamsList = getContextAuthzMetaParamsList(paramsList, {
         defaultOverride: this.sessionAuthzOptions.defaultOverride,
         skipFalsyMetadata: this.sessionAuthzOptions.skipFalsyMetadata
       });
-
-      // equals public
-      if (!contextParamsList.length) {
-        return true;
-      }
 
       const req: Request = context.switchToHttp().getRequest();
 
@@ -100,15 +101,9 @@ export const createSessionAuthzGuard = ([
 
       await super.canActivate(context);
 
-      // skipped by default if authorize is not implemented
-      if (typeof this.authzProvider.authorize !== 'function') {
-        store.guardResult = true;
-        return true;
-      }
-
       // will be null if allowAnonymous=true.
       const user = getPassportProperty(req);
-      if (!user && store.allowAnonymous) {
+      if (store.allowAnonymous && !user) {
         return true;
       }
 
