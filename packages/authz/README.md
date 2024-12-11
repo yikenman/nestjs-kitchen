@@ -1,5 +1,10 @@
 # @nestjs-kitchen/authz
 
+[![NPM Version](https://img.shields.io/npm/v/%40nestjs-kitchen%2Fauthz)
+](https://www.npmjs.com/package/@nestjs-kitchen/authz)
+![NPM License](https://img.shields.io/npm/l/%40nestjs-kitchen%2Fauthz)
+[![codecov](https://codecov.io/gh/yikenman/nestjs-kitchen/graph/badge.svg?token=43EG2T8LKS&flag=@nestjs-kitchen/authz)](https://codecov.io/gh/yikenman/nestjs-kitchen)
+
 Simplest authentication & authorization module in NextJS.
 
 ---
