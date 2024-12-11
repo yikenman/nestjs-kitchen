@@ -58,23 +58,13 @@ jobs:
       - name: Run Test Parallel
         run: pnpm run test --filter=${{ matrix.name }}...
 
-      - name: Coveralls Parallel
-        uses: coverallsapp/github-action@v2
+      - name: Codecov Parallel
+        uses: codecov/codecov-action@v5
         with:
-          flag-name: ${{ matrix.name }}
-          allow-empty: true
-          parallel: true
+          fail_ci_if_error: true
+          flags: ${{ matrix.name }}
+          directory: ${{ matrix.path }}
+          handle_no_reports_found: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  finish:
-    needs: [list, test]
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Debug
-        run: echo ${{ join(fromJSON(needs.list.outputs.package).*.name) }}
-    
-      - name: Coveralls Finished
-        uses: coverallsapp/github-action@v2
-        with:
-          parallel-finished: true
-          carryforward: ${{ join(fromJSON(needs.list.outputs.package).*.name) }}
