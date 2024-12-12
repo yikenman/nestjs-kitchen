@@ -1,5 +1,11 @@
 # @nestjs-kitchen/authz
 
+## 1.1.1
+
+### Patch Changes
+
+- fc050c3: fix: ts2742
+
 ## 1.1.0
 
 ### Minor Changes
