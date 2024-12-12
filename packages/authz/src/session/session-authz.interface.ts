@@ -1,6 +1,8 @@
-import type { SessionOptions } from 'express-session';
+import session from 'express-session';
 import { DEFAULT_PASSPORT_PROPERTY_VALUE } from '../constants';
 import type { AuthzModuleBaseOptions } from '../utils';
+
+export type SessionOptions = Parameters<typeof session>[0];
 
 export type SessionAuthzModuleOptions = Partial<AuthzModuleBaseOptions> & {
   /**
