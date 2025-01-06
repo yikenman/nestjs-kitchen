@@ -9,8 +9,9 @@
   "license": "MIT",
   "scripts": {
     "build": "turbo run build",
-    "changeset": "changeset",
     "check": "syncpack format && syncpack lint",
+    "ci:publish": "changeset publish",
+    "ci:version": "changeset version && pnpm install --frozen-lockfile=false",
     "dev": "turbo run dev",
     "format": "biome check .",
     "format:fix": "biome check . --write",
