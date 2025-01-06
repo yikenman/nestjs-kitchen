@@ -138,7 +138,7 @@ describe('PostgresInstance', () => {
     it('should call dispose() and create a new pool on create()', () => {
       expect((instance as any).pool).toBeUndefined();
 
-      const options = { user: 'test', host: 'localhost', database: 'testdb', password: 'secret', port: 5432 };
+      const options = {};
       instance.create(options);
 
       expect(spyDispose).toHaveBeenCalled();
@@ -151,7 +151,7 @@ describe('PostgresInstance', () => {
 
   describe('dispose', () => {
     it('should dispose the existing pool', async () => {
-      instance.create({ user: 'test', host: 'localhost', database: 'testdb', password: 'secret', port: 5432 });
+      instance.create({});
       const pool = (instance as any).pool;
       expect(pool).toBe(mockPool);
 
@@ -211,7 +211,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue(mockClient);
 
-      instance.create({ user: 'test', host: 'localhost', database: 'testdb', password: 'secret', port: 5432 });
+      instance.create({});
       const client = await instance[GET_CLIENT]();
       expect(mockPool.connect).toHaveBeenCalled();
       expect(client).toEqual(mockClient);
@@ -221,7 +221,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue('');
 
-      instance.create({ user: 'test', host: 'localhost', database: 'testdb', password: 'secret', port: 5432 });
+      instance.create({});
       await expect(instance[GET_CLIENT]()).rejects.toThrow(new PostgresError('client not found'));
     });
 
@@ -230,7 +230,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockPool.connect.mockRejectedValue(err);
 
-      instance.create({ user: 'test', host: 'localhost', database: 'testdb', password: 'secret', port: 5432 });
+      instance.create({});
       await expect(instance[GET_CLIENT]()).rejects.toThrow(new PostgresError(err, err));
     });
   });
@@ -253,7 +253,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue(mockClient);
 
-      instance.create({ user: 'test', host: 'localhost', database: 'testdb', password: 'secret', port: 5432 });
+      instance.create({});
     });
 
     it('should throw error when no parameters', async () => {
@@ -322,7 +322,7 @@ describe('PostgresInstance', () => {
     beforeEach(() => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue(mockClient);
-      instance.create({ user: 'test', host: 'localhost', database: 'testdb', password: 'secret', port: 5432 });
+      instance.create({});
     });
 
     it('should correctly return and release the client', async () => {
@@ -397,7 +397,7 @@ describe('PostgresInstance', () => {
     beforeEach(() => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue(mockClient);
-      instance.create({ user: 'test', host: 'localhost', database: 'testdb', password: 'secret', port: 5432 });
+      instance.create({});
     });
 
     it('should correctly return and release the client', async () => {
@@ -576,7 +576,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue(mockClient);
 
-      instance.create({ user: 'test', host: 'localhost', database: 'testdb', password: 'secret', port: 5432 });
+      instance.create({});
       const client = await instance[GET_CLIENT]();
 
       expect(client).not.toBe(mockClient);
@@ -586,7 +586,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue(mockClient);
 
-      instance.create({ user: 'test', host: 'localhost', database: 'testdb', password: 'secret', port: 5432 });
+      instance.create({});
       const client = await instance[GET_CLIENT]();
 
       expect(createDebugLogger).toHaveBeenCalledWith(expect.any(Function), (instance as any).debug);
@@ -602,7 +602,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue('');
 
-      instance.create({ user: 'test', host: 'localhost', database: 'testdb', password: 'secret', port: 5432 });
+      instance.create({});
       await expect(instance[GET_CLIENT]()).rejects.toThrow(new PostgresError('client not found'));
     });
 
@@ -611,7 +611,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockPool.connect.mockRejectedValue(err);
 
-      instance.create({ user: 'test', host: 'localhost', database: 'testdb', password: 'secret', port: 5432 });
+      instance.create({});
       await expect(instance[GET_CLIENT]()).rejects.toThrow(new PostgresError(err, err));
       expect(createDebugLogger).toHaveBeenCalled();
       expect(uid).toHaveBeenCalled();
@@ -624,7 +624,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockClient.query.mockResolvedValue({ rows: [] });
 
-      instance.create({ user: 'test', host: 'localhost', database: 'testdb', password: 'secret', port: 5432 });
+      instance.create({});
 
       const client = await instance[GET_CLIENT]();
 
@@ -637,7 +637,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockClient.query.mockResolvedValue({ rows: [] });
 
-      instance.create({ user: 'test', host: 'localhost', database: 'testdb', password: 'secret', port: 5432 });
+      instance.create({});
 
       const client = await instance[GET_CLIENT]();
       await client.query('SELECT 1');
@@ -649,7 +649,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue(mockClient);
 
-      instance.create({ user: 'test', host: 'localhost', database: 'testdb', password: 'secret', port: 5432 });
+      instance.create({});
 
       const client = await instance[GET_CLIENT]();
       client.release();
@@ -661,7 +661,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue(mockClient);
 
-      instance.create({ user: 'test', host: 'localhost', database: 'testdb', password: 'secret', port: 5432 });
+      instance.create({});
 
       const client = await instance[GET_CLIENT]();
       mockLogger.debug.mockClear();
@@ -678,7 +678,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockClient.query.mockResolvedValue({ rows: [] });
 
-      instance.create({ user: 'test', host: 'localhost', database: 'testdb', password: 'secret', port: 5432 });
+      instance.create({});
 
       const client = await instance[GET_CLIENT]();
       await client.query('SELECT 1');
