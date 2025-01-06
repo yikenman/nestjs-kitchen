@@ -21,6 +21,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "jest",
+    "test:ci": "jest --coverage && jest --config ./test/jest-e2e.config.json",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/jest/bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.config.json",
