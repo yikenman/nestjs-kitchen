@@ -31,6 +31,7 @@
     "uid": "^2.0.2"
   },
   "devDependencies": {
+    "@nestjs-kitchen/connextion": "workspace:*",
     "@nestjs/testing": "^10.4.15",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.5",
