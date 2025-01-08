@@ -73,7 +73,7 @@ describe('defineConnextionBuilder', () => {
       expect(createConnextionService).toHaveBeenCalledTimes(1);
 
       expect(mixinModule).toHaveBeenCalledTimes(1);
-      expect(mixinModule).toHaveBeenCalledWith('TestModule', expect.any(Function));
+      expect(mixinModule).toHaveBeenCalledWith(expect.any(Function));
 
       expect(TestModule).toBeDefined();
       expect(typeof TestModule).toBe('function');
