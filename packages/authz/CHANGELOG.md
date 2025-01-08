@@ -1,5 +1,12 @@
 # @nestjs-kitchen/authz
 
+## 1.1.2
+
+### Patch Changes
+
+- 6f1e250: fix CVE-2024-45296
+- 6f1e250: correct peer deps
+
 ## 1.1.1
 
 ### Patch Changes

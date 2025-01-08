@@ -2,7 +2,7 @@
   "name": "@nestjs-kitchen/connextion-postgres",
   "private": false,
   "description": "A flexible module to provide node-postgres interface in NextJS.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "homepage": "https://github.com/yikenman/nestjs-kitchen",
   "repository": "https://github.com/yikenman/nestjs-kitchen",
   "author": "yikenman",
