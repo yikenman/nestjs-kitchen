@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { uid } from 'uid';
 import { mixinModule } from './mixin-module';
 
 class MockService {}
@@ -8,6 +9,13 @@ jest.mock('@nestjs/common', () => {
   return {
     ...actual,
     Module: jest.fn(actual.Module)
+  };
+});
+
+jest.mock('uid', () => {
+  const actual = jest.requireActual('uid');
+  return {
+    uid: jest.fn(actual.uid)
   };
 });
 
@@ -21,9 +29,10 @@ describe('mixinModule', () => {
     const name = 'MyCustomModule';
     const mixinClass = class extends MockService {};
 
-    const result = mixinModule(name, mixinClass);
+    const result = mixinModule(mixinClass);
 
-    expect(result.name).toBe(name);
+    expect(uid).toHaveBeenCalledWith(21);
+    expect(result.name).toBe(jest.mocked(uid).mock.results[0].value);
   });
 
   it('should apply the @Module decorator correctly', () => {
@@ -33,7 +42,7 @@ describe('mixinModule', () => {
     const mockModuleFn = jest.fn();
     jest.mocked(Module).mockReturnValue(mockModuleFn);
 
-    mixinModule(name, mixinClass);
+    mixinModule(mixinClass);
 
     expect(Module).toHaveBeenCalledTimes(1);
     expect(Module).toHaveBeenCalledWith({});

@@ -116,7 +116,7 @@ export const defineConnextionBuilder = <
     };
 
     return {
-      [moduleName]: mixinModule(moduleName, obj[moduleName]),
+      [moduleName]: mixinModule(obj[moduleName]),
       [connextionName]: Connextion
     } as unknown as {
       [K in `${Capitalize<CON_N>}Module`]: (typeof obj)[typeof moduleName];

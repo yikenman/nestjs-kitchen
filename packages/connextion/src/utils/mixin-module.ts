@@ -1,8 +1,9 @@
 import { Module, type Type } from '@nestjs/common';
+import { uid } from 'uid';
 
-export function mixinModule<T>(name: string, mixinClass: Type<T>) {
+export function mixinModule<T>(mixinClass: Type<T>) {
   Object.defineProperty(mixinClass, 'name', {
-    value: name
+    value: uid(21)
   });
   Module({})(mixinClass);
   return mixinClass;
