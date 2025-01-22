@@ -1,5 +1,11 @@
 # @nestjs-kitchen/connextion
 
+## 1.0.2
+
+### Patch Changes
+
+- 2d64209: remove useless deps
+
 ## 1.0.1
 
 ### Patch Changes
