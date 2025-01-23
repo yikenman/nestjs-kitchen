@@ -1,5 +1,11 @@
 # @nestjs-kitchen/connextion-presto
 
+## 1.0.1
+
+### Patch Changes
+
+- 0bdf29d: withResolver polyfill
+
 ## 1.0.0
 
 ### Major Changes
