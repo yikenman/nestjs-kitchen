@@ -82,7 +82,7 @@ export class PrestoInstance extends ConnextionInstance<PrestoInstanceOptions> {
     }
 
     const columns: Column[] = [];
-    const data: unknown[][] = [];
+    const rawData: unknown[][] = [];
     const startOn = getCurrentDateStr();
     let queryId: string = '';
 
@@ -100,7 +100,7 @@ export class PrestoInstance extends ConnextionInstance<PrestoInstanceOptions> {
         columns.push(...data);
       },
       data: (_, data) => {
-        data.push(...data);
+        rawData.push(...data);
       },
       error: (error) => {
         this.debugLogger({
@@ -116,7 +116,7 @@ export class PrestoInstance extends ConnextionInstance<PrestoInstanceOptions> {
         reject(new PrestoError(error.message, error));
       },
       success: () => {
-        const rows = buildDataRows<T>(columns, data);
+        const rows = buildDataRows<T>(columns, rawData);
         this.debugLogger({
           Instance: this.name,
           QueryId: queryId,

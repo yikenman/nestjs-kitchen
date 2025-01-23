@@ -94,8 +94,8 @@ describe('PrestoInstance', () => {
 
       const result = await prestoInstance.execute(options);
 
-      expect(result).toHaveProperty('columns');
-      expect(result).toHaveProperty('rows');
+      expect(result['columns']).toEqual([{ name: 'column1' }]);
+      expect(result['rows']).toEqual([{ column1: 'value1' }]);
       expect(result).toHaveProperty('queryId');
       expect(prestoInstance['queryIdMap'].has(id)).toBeTruthy();
       expect(prestoInstance['debugLogger']).toHaveBeenCalled();
@@ -116,8 +116,8 @@ describe('PrestoInstance', () => {
 
       const result = await prestoInstance.execute(options);
 
-      expect(result).toHaveProperty('columns');
-      expect(result).toHaveProperty('rows');
+      expect(result['columns']).toEqual([{ name: 'column1' }]);
+      expect(result['rows']).toEqual([{ column1: 'value1' }]);
       expect(result).toHaveProperty('queryId');
       expect(prestoInstance['queryIdMap'].has(id)).toBeFalsy();
       expect(prestoInstance['debugLogger']).toHaveBeenCalled();
