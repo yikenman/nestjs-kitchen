@@ -1,5 +1,11 @@
 # @nestjs-kitchen/connextion-presto
 
+## 1.0.2
+
+### Patch Changes
+
+- c84c066: fix empty rows.
+
 ## 1.0.1
 
 ### Patch Changes
