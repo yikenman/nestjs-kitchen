@@ -141,4 +141,71 @@ describe('Utility Functions', () => {
       expect(utils.noop('test')).toBeFalsy();
     });
   });
+
+  describe('withResolvers', () => {
+    it('should create a promise with resolve and reject methods', async () => {
+      const { promise, resolve, reject } = utils.withResolvers<string>();
+
+      expect(promise).toBeInstanceOf(Promise);
+      expect(typeof resolve).toBe('function');
+      expect(typeof reject).toBe('function');
+    });
+
+    it('should resolve the promise when resolve is called', async () => {
+      const { promise, resolve } = utils.withResolvers<string>();
+      const resolvedValue = 'Hello World';
+
+      resolve(resolvedValue);
+
+      await expect(promise).resolves.toBe(resolvedValue);
+    });
+
+    it('should reject the promise when reject is called', async () => {
+      const { promise, reject } = utils.withResolvers<string>();
+      const error = new Error('Something went wrong');
+
+      reject(error);
+
+      await expect(promise).rejects.toThrow('Something went wrong');
+    });
+
+    it('should resolve only once', async () => {
+      const { promise, resolve } = utils.withResolvers<number>();
+      resolve(42);
+      resolve(99); // This should be ignored
+      const result = await promise;
+
+      expect(result).toBe(42);
+    });
+
+    it('should reject only once', async () => {
+      const { promise, reject } = utils.withResolvers<number>();
+      const error = new Error('Initial Error');
+      reject(error);
+      reject(new Error('Second Error')); // This should be ignored
+
+      await expect(promise).rejects.toThrow('Initial Error');
+    });
+
+    it('should support chaining after resolve', async () => {
+      const { promise, resolve } = utils.withResolvers<number>();
+      resolve(10);
+
+      const result = await promise.then((value) => value * 2);
+      expect(result).toBe(20);
+    });
+
+    it('should support catch after reject', async () => {
+      const { promise, reject } = utils.withResolvers<number>();
+      const error = new Error('Test Error');
+      reject(error);
+
+      const result = await promise.catch((err) => {
+        expect(err).toBe(error);
+        return 0;
+      });
+
+      expect(result).toBe(0);
+    });
+  });
 });
