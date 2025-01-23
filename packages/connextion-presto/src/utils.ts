@@ -65,3 +65,13 @@ export const buildDataRows = <T>(columns: Column[], data: unknown[][]) => {
 };
 
 export const noop = (..._: unknown[]) => {};
+
+export const withResolvers = <T>() => {
+  let resolve: PromiseWithResolvers<T>['resolve'];
+  let reject: PromiseWithResolvers<T>['reject'];
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve: resolve!, reject: reject! };
+};
