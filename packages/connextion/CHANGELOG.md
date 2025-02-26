@@ -1,5 +1,11 @@
 # @nestjs-kitchen/connextion
 
+## 1.0.3
+
+### Patch Changes
+
+- c6fa893: bump esbuild version
+
 ## 1.0.2
 
 ### Patch Changes
