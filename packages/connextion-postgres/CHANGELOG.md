@@ -1,5 +1,13 @@
 # @nestjs-kitchen/connextion-postgres
 
+## 1.0.4
+
+### Patch Changes
+
+- c6fa893: bump esbuild version
+- Updated dependencies [c6fa893]
+  - @nestjs-kitchen/connextion@1.0.3
+
 ## 1.0.3
 
 ### Patch Changes
