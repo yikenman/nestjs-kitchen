@@ -9,7 +9,7 @@
   "license": "MIT",
   "scripts": {
     "build": "turbo run build",
-    "check": "syncpack format && syncpack lint",
+    "check": "syncpack format && syncpack lint && echo ''",
     "ci:publish": "changeset publish",
     "ci:version": "changeset version && pnpm install --frozen-lockfile=false",
     "dev": "turbo run dev",
@@ -20,12 +20,12 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@changesets/cli": "^2.27.11",
-    "@changesets/config": "^3.0.5",
+    "@changesets/cli": "^2.28.1",
+    "@changesets/config": "^3.1.1",
     "husky": "^9.1.7",
-    "lint-staged": "^15.3.0",
-    "syncpack": "^13.0.0",
-    "turbo": "^2.3.3"
+    "lint-staged": "^15.4.3",
+    "syncpack": "^13.0.2",
+    "turbo": "^2.4.4"
   },
   "engines": {
     "node": ">=20.13.0"
