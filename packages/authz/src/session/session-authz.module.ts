@@ -283,7 +283,7 @@ export const cereateSessionAuthzModule = <P, U, T extends AuthzProviderClass<P, 
       consumer
         .apply(session(this.sessionAuthzOptions.session), SessionAuthzAlsMiddleware)
         .exclude(...this.routesOpt.excludes)
-        .forRoutes(...(this.routesOpt.global ? ['*'] : this.routesOpt.routes));
+        .forRoutes(...(this.routesOpt.global ? ['{*splat}'] : this.routesOpt.routes));
     }
   }
 
