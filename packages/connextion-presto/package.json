@@ -27,8 +27,7 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
-    "dayjs": "^1.11.13",
-    "uid": "^2.0.2"
+    "dayjs": "^1.11.13"
   },
   "devDependencies": {
     "@nestjs-kitchen/connextion": "workspace:*",
