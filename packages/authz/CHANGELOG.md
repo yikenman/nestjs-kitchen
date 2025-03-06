@@ -1,5 +1,11 @@
 # @nestjs-kitchen/authz
 
+## 2.0.0
+
+### Major Changes
+
+- d4b9303: bump NestJS to v11
+
 ## 1.1.3
 
 ### Patch Changes

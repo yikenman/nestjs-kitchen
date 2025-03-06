@@ -1,5 +1,15 @@
 # @nestjs-kitchen/connextion
 
+## 2.0.0
+
+### Major Changes
+
+- d4b9303: bump NestJS to v11
+
+### Minor Changes
+
+- d4b9303: feat: support async create()
+
 ## 1.0.3
 
 ### Patch Changes

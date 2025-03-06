@@ -1,5 +1,18 @@
 # @nestjs-kitchen/connextion-postgres
 
+## 2.0.0
+
+### Major Changes
+
+- d4b9303: bump NestJS to v11
+
+### Patch Changes
+
+- d4b9303: feat: handle errors in create()
+- Updated dependencies [d4b9303]
+- Updated dependencies [d4b9303]
+  - @nestjs-kitchen/connextion@2.0.0
+
 ## 1.0.4
 
 ### Patch Changes
