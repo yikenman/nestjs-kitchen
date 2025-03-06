@@ -23,4 +23,5 @@ Convenient tools to cook up your NextJS application.
 | ✅     | [`@nestjs-kitchen/connextion`](./packages/connextion/README.md) | A module builder of generic instance management in NextJS.   |
 | ✅     | [`@nestjs-kitchen/connextion-postgres`](./packages/connextion-postgres/README.md) | A flexible module to provide [node-postgres](https://node-postgres.com/) interface in NextJS.   |
 | ✅     | [`@nestjs-kitchen/connextion-presto`](./packages/connextion-presto/README.md) | A flexible module to provide [presto-client](https://www.npmjs.com/package/presto-client) interface in NextJS.   |
+| ✅     | [`@nestjs-kitchen/connextion-duckdb`](./packages/connextion-duckdb/README.md) | A flexible module to provide [@duckdb/node-api](https://www.npmjs.com/package/@duckdb/node-api) interface in NextJS.   |
 | ❌     | `@nestjs-kitchen/memo`                | Memoization on controllers/services (WIP).                    |
