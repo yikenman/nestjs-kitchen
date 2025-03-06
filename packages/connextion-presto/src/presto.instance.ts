@@ -70,7 +70,11 @@ export class PrestoInstance extends ConnextionInstance<PrestoInstanceOptions> {
   create(options: PrestoInstanceOptions) {
     this.dispose();
     options.user = options.user ?? options.basic_auth?.user;
-    this.client = new Client(options);
+    try {
+      this.client = new Client(options);
+    } catch (error) {
+      this.logger.error(error.message);
+    }
   }
 
   execute<T extends QueryResultRow = any>(options: ExecuteOptions) {
