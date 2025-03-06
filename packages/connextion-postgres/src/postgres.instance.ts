@@ -66,13 +66,18 @@ export class PostgresInstance extends ConnextionInstance<PostgresInstanceOptions
 
   create(options: PostgresInstanceOptions) {
     this.dispose();
-    const pool = new Pool(options);
 
-    //https://github.com/brianc/node-postgres/issues/2439#issuecomment-757691278
-    pool.on('connect', this.listener1);
-    pool.on('error', this.listener2);
+    try {
+      const pool = new Pool(options);
 
-    this.pool = pool;
+      //https://github.com/brianc/node-postgres/issues/2439#issuecomment-757691278
+      pool.on('connect', this.listener1);
+      pool.on('error', this.listener2);
+
+      this.pool = pool;
+    } catch (error) {
+      this.logger.error(error.message);
+    }
   }
 
   public async [GET_CLIENT]() {
@@ -103,12 +108,13 @@ export class PostgresInstance extends ConnextionInstance<PostgresInstanceOptions
     }
 
     return new Proxy(client, {
-      get(target, prop: string) {
+      get(target, prop: string, receiver) {
+        const value = Reflect.get(target, prop, receiver);
         if (debug.client[prop]) {
-          return debug.client[prop](target[prop].bind(target));
+          return debug.client[prop](value.bind(target));
         }
 
-        return target[prop];
+        return value;
       }
     });
   }

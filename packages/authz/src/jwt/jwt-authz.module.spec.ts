@@ -527,7 +527,7 @@ describe('JWT Authz Module', () => {
         expect(middlewareConsumer.forRoutes).toHaveBeenCalledWith(...mockedRoutes);
       });
 
-      it("should apply '*' to consumer.forRoutes if options.global is true", async () => {
+      it("should apply '*splat' to consumer.forRoutes if options.global is true", async () => {
         const { AuthzModule } = createJwtAuthzModule(TestJwtAuthzProvider);
 
         module = await Test.createTestingModule({
@@ -553,7 +553,7 @@ describe('JWT Authz Module', () => {
           jest.mocked(createJwtAuthzAlsMiddleware).mock.results[0].value
         );
         expect(middlewareConsumer.exclude).toHaveBeenCalledWith(...mockedExcludes);
-        expect(middlewareConsumer.forRoutes).toHaveBeenCalledWith('*');
+        expect(middlewareConsumer.forRoutes).toHaveBeenCalledWith('{*splat}');
       });
     });
   });

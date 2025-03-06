@@ -147,6 +147,19 @@ describe('PostgresInstance', () => {
       expect(mockPool.on).toHaveBeenCalledWith('error', mockListener2);
       expect((instance as any).pool).toBe(mockPool);
     });
+
+    it('should log error if create fails', async () => {
+      jest.clearAllMocks();
+      jest.resetModules();
+
+      jest.mocked(Pool).mockImplementation(() => {
+        throw new Error('Create failed');
+      });
+      const options = {};
+      instance.create(options);
+
+      expect(mockLogger.error).toHaveBeenCalledWith('Create failed');
+    });
   });
 
   describe('dispose', () => {

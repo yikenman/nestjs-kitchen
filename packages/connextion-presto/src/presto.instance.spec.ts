@@ -187,5 +187,21 @@ describe('PrestoInstance', () => {
       expect(prestoInstance['client']).toBeDefined();
       expect(Client).toHaveBeenCalledWith({ ...options, ...options.basic_auth });
     });
+
+    it('should log error if create fails', async () => {
+      jest.clearAllMocks();
+      jest.resetModules();
+
+      // @ts-ignore
+      const spyErrorLogger = jest.spyOn(prestoInstance['logger'], 'error');
+
+      jest.mocked(Client).mockImplementation(() => {
+        throw new Error('Create failed');
+      });
+      const options = {};
+      prestoInstance.create(options);
+
+      expect(spyErrorLogger).toHaveBeenCalledWith('Create failed');
+    });
   });
 });

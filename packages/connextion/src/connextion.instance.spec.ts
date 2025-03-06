@@ -28,23 +28,23 @@ describe('ConnextionInstance', () => {
   });
 
   describe('onModuleInit', () => {
-    it('should call create with options when initialized', () => {
+    it('should call create with options when initialized', async () => {
       const createSpy = jest.spyOn(instance, 'create');
 
       // Call onModuleInit which should invoke create method
-      instance.onModuleInit();
+      await instance.onModuleInit();
 
       // Verify the create method is called with correct options and options are cleared
       expect(createSpy).toHaveBeenCalledWith({ option1: 'value1' });
       expect(instance['options']).toBeUndefined();
     });
 
-    it('should not call create if options are undefined', () => {
+    it('should not call create if options are undefined', async () => {
       const createSpy = jest.spyOn(instance, 'create');
 
       // Create instance without options
       const instanceWithoutOptions = new MockConnextionInstance('test-instance');
-      instanceWithoutOptions.onModuleInit();
+      await instanceWithoutOptions.onModuleInit();
 
       expect(createSpy).not.toHaveBeenCalled();
     });
