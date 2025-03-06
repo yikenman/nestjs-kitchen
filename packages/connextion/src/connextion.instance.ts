@@ -9,11 +9,11 @@ export abstract class ConnextionInstance<O> implements OnModuleInit, OnModuleDes
     this.options = options;
   }
 
-  onModuleInit() {
+  async onModuleInit() {
     if (this.options) {
       const options = this.options;
       this.options = undefined;
-      this.create(options);
+      await this.create(options);
     }
   }
 
