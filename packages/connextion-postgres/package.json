@@ -57,7 +57,7 @@
   ],
   "peerDependencies": {
     "@nestjs-kitchen/connextion": "workspace:*",
-    "@nestjs/common": "^11.0.10",
+    "@nestjs/common": "^10.0.0 || ^11.0.0",
     "@types/pg": "^8.11.10",
     "pg": "^8.13.1",
     "reflect-metadata": "^0.2.2"
