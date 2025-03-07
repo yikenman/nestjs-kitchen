@@ -553,7 +553,7 @@ describe('JWT Authz Module', () => {
           jest.mocked(createJwtAuthzAlsMiddleware).mock.results[0].value
         );
         expect(middlewareConsumer.exclude).toHaveBeenCalledWith(...mockedExcludes);
-        expect(middlewareConsumer.forRoutes).toHaveBeenCalledWith('{*splat}');
+        expect(middlewareConsumer.forRoutes).toHaveBeenCalledWith('*');
       });
     });
   });
