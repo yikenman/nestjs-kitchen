@@ -1,5 +1,11 @@
 # @nestjs-kitchen/connextion
 
+## 2.0.1
+
+### Patch Changes
+
+- a8572ee: chore: Compatible with NestJS v10,v11
+
 ## 2.0.0
 
 ### Major Changes
