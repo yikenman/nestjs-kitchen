@@ -1,27 +1,19 @@
 {
   "compilerOptions": {
+    "composite": true,
     "module": "NodeNext",
     "lib": [
       "ESNext"
     ],
-    "declaration": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "strictNullChecks": true,
-    "target": "ES2021",
-    "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
     "skipLibCheck": true,
     "esModuleInterop": true
   },
   "include": [
-    "src"
-  ],
-  "references": [
-    {
-      "path": "./tsconfig.node.json"
-    }
+    "src",
+    "test"
   ]
 }
