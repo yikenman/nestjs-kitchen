@@ -26,6 +26,9 @@
     "test:e2e:watch": "jest --config ./test/jest-e2e.config.json --watch",
     "test:watch": "jest --watch"
   },
+  "dependencies": {
+    "node-object-hash": "^3.1.1"
+  },
   "devDependencies": {
     "@keyv/redis": "^4.3.0",
     "@nestjs/platform-express": "^11.0.0",

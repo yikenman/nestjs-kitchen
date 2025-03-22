@@ -12,6 +12,14 @@ export type CacheModuleOptions<StoreConfig extends Record<any, any> = Record<str
      * If "true', register `CacheModule` as a global module.
      */
     isGlobal?: boolean;
+    /**
+     * If "true', display more logs.
+     */
+    verbose?: boolean;
+    /**
+     * Define algorithm for hashing function arguments in CacheResult. Default is 'md5'.
+     */
+    argAlg?: 'sha256' | 'sha1' | 'sha224' | 'sha384' | 'sha512' | 'md4' | 'md5' | 'whirlpool' | ({} & string);
   };
 
 /**

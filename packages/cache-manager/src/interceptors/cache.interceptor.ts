@@ -12,7 +12,7 @@ import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
 import { HttpAdapterHost, Reflector } from '@nestjs/core';
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { CACHE_KEY_METADATA, CACHE_MANAGER, CACHE_TTL_METADATA } from '../cache.constants';
+import { CACHE_KEY_METADATA, CACHE_MANAGER, CACHE_TTL_METADATA, CACHE_VERBOSE_LOG } from '../cache.constants';
 
 /**
  * @see [Caching](https://docs.nestjs.com/techniques/caching)
@@ -33,23 +33,32 @@ export class CacheInterceptor implements NestInterceptor {
   ) {}
 
   async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
-    const key = this.trackBy(context);
-    const ttlValueOrFactory =
-      this.reflector.get(CACHE_TTL_METADATA, context.getHandler()) ??
-      this.reflector.get(CACHE_TTL_METADATA, context.getClass()) ??
-      null;
+    let key: string | undefined = undefined;
 
-    if (!key) {
-      return next.handle();
-    }
     try {
+      key = await this.trackBy(context);
+
+      if (isNil(key)) {
+        if (this.cacheManager[CACHE_VERBOSE_LOG]) {
+          Logger.warn(`Invalid cache key. Falling back to the original method without caching.`, 'CacheInterceptor');
+        }
+        return next.handle();
+      }
+
       const value = await this.cacheManager.get(key);
-      this.setHeadersWhenHttp(context, value);
 
       if (!isNil(value)) {
+        this.setHeadersWhenHttp(context, value);
         return of(value);
       }
+
+      const ttlValueOrFactory =
+        this.reflector.get(CACHE_TTL_METADATA, context.getHandler()) ??
+        this.reflector.get(CACHE_TTL_METADATA, context.getClass()) ??
+        null;
       const ttl = isFunction(ttlValueOrFactory) ? await ttlValueOrFactory(context) : ttlValueOrFactory;
+
+      this.setHeadersWhenHttp(context, value);
 
       return next.handle().pipe(
         tap(async (response) => {
@@ -73,20 +82,29 @@ export class CacheInterceptor implements NestInterceptor {
           }
         })
       );
-    } catch {
+    } catch (err) {
+      if (this.cacheManager[CACHE_VERBOSE_LOG]) {
+        Logger.warn(
+          `An error has occurred when getting "key: ${key}". Falling back to the original method without caching`,
+          err.stack,
+          'CacheInterceptor'
+        );
+      }
       return next.handle();
     }
   }
 
-  protected trackBy(context: ExecutionContext): string | undefined {
+  protected trackBy(context: ExecutionContext): Promise<string | undefined> | string | undefined {
     const httpAdapter = this.httpAdapterHost.httpAdapter;
     const isHttpApp = httpAdapter && !!httpAdapter.getRequestMethod;
-    const cacheMetadata = this.reflector.get(CACHE_KEY_METADATA, context.getHandler());
+    const keyValueOrFactory =
+      this.reflector.get(CACHE_KEY_METADATA, context.getHandler()) ??
+      this.reflector.get(CACHE_KEY_METADATA, context.getClass()) ??
+      null;
 
-    if (!isHttpApp || cacheMetadata) {
-      return cacheMetadata;
+    if (!isHttpApp || keyValueOrFactory) {
+      return isFunction(keyValueOrFactory) ? keyValueOrFactory(context) : keyValueOrFactory;
     }
-
     const request = context.getArgByIndex(0);
     if (!this.isRequestCacheable(context)) {
       return undefined;

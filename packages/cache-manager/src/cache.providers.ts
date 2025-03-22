@@ -1,8 +1,9 @@
 import { Provider } from '@nestjs/common';
 import { createCache } from 'cache-manager';
 import Keyv, { type KeyvStoreAdapter } from 'keyv';
-import { CACHE_MANAGER } from './cache.constants';
+import { CACHE_MANAGER, CACHE_RESULT_OPTIONS, CACHE_VERBOSE_LOG } from './cache.constants';
 import { MODULE_OPTIONS_TOKEN } from './cache.module-definition';
+import type { CacheModuleOptions, CacheResultOptions } from './interfaces';
 import { CacheManagerOptions } from './interfaces/cache-manager.interface';
 
 /**
@@ -13,7 +14,8 @@ import { CacheManagerOptions } from './interfaces/cache-manager.interface';
 export function createCacheManager(): Provider {
   return {
     provide: CACHE_MANAGER,
-    useFactory: async (options: CacheManagerOptions) => {
+    useFactory: async (moduleOptions: CacheModuleOptions) => {
+      const { argAlg, verbose, ...options } = moduleOptions;
       const cachingFactory = async (
         store: Keyv | KeyvStoreAdapter,
         options: Omit<CacheManagerOptions, 'stores'>
@@ -50,6 +52,12 @@ export function createCacheManager(): Provider {
         }
         await Promise.all(stores.map(async (store) => store.disconnect()));
       };
+
+      (cacheManager as any)[CACHE_VERBOSE_LOG] = verbose;
+      (cacheManager as any)[CACHE_RESULT_OPTIONS] = {
+        alg: argAlg
+      } as CacheResultOptions;
+
       return cacheManager;
     },
     inject: [MODULE_OPTIONS_TOKEN]
