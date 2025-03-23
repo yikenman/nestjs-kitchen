@@ -33,7 +33,7 @@ import {
  *   async fetchData() { ... }
  *
  *   ⁣@CacheResult()
- *   ⁣@CacheKey((...args) => `data:${args[0]}`)
+ *   ⁣@CacheKey((args: any[]) => `data:${args[0]}`)
  *   ⁣@CacheTTL(60)
  *   async getItemById(id: number) { ... }
  * }
