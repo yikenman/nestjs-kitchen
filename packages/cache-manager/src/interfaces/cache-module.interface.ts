@@ -1,5 +1,6 @@
 import { ConfigurableModuleAsyncOptions, Provider, Type } from '@nestjs/common';
 import { CacheManagerOptions } from './cache-manager.interface';
+import type { CacheResultOptions } from './cache-result-options.interface';
 
 export type CacheOptions<StoreConfig extends Record<any, any> = Record<string, any>> =
   // Store-specific configuration takes precedence over cache module options due
@@ -19,7 +20,7 @@ export type CacheModuleOptions<StoreConfig extends Record<any, any> = Record<str
     /**
      * Define algorithm for hashing function arguments in CacheResult. Default is 'md5'.
      */
-    argAlg?: 'sha256' | 'sha1' | 'sha224' | 'sha384' | 'sha512' | 'md4' | 'md5' | 'whirlpool' | ({} & string);
+    argAlg?: CacheResultOptions['alg'];
   };
 
 /**

@@ -1,7 +1,12 @@
-import type { DynamicModule } from '@nestjs/common';
 import { PATH_METADATA } from '@nestjs/common/constants';
 import { hasher } from 'node-object-hash';
-import { CACHE_RESULT_METADATA } from './cache.constants';
+import {
+  CACHE_RESULT_METADATA,
+  DEFAULT_ARGS_ALG,
+  GRAPHQL_META_PREFIX,
+  MICROSERVICES_META_PREFIX,
+  WEBSOCKETS_META_PREFIX
+} from './cache.constants';
 
 export const copyMethodMetadata = (from: any, to: any) => {
   const metadataKeys = Reflect.getMetadataKeys(from);
@@ -24,9 +29,9 @@ export const isValidMethod = (target: any) => {
   return !metadataKeys.some(
     (key) =>
       key === PATH_METADATA ||
-      key.startsWith('websockets:') ||
-      key.startsWith('microservices:') ||
-      key.startsWith('graphql:')
+      key.startsWith(WEBSOCKETS_META_PREFIX) ||
+      key.startsWith(MICROSERVICES_META_PREFIX) ||
+      key.startsWith(GRAPHQL_META_PREFIX)
   );
 };
 
@@ -41,36 +46,7 @@ export const getMetadata = <T>(key: string, targets: any[] = []): T | undefined 
   return undefined;
 };
 
-export const plainPromise = async <T>(promise: Promise<T> | T): Promise<[T, undefined] | [undefined, any]> => {
-  let result: T | undefined = undefined;
-  let err: unknown = undefined;
-
-  try {
-    result = await promise;
-  } catch (error) {
-    err = error;
-  }
-
-  return [result, err] as any;
-};
-
 export const hashNoCoerce = hasher({
   coerce: false,
-  alg: 'md5'
+  alg: DEFAULT_ARGS_ALG
 });
-
-export const mergeDynamicModuleConfigs = (...configs: Partial<DynamicModule>[]) => {
-  const merged = configs.reduce<Partial<DynamicModule>>(
-    (acc, curr) => ({
-      global: acc?.global || curr?.global,
-      module: acc?.module || curr?.module,
-      imports: [...(acc?.imports || []), ...(curr?.imports || [])],
-      controllers: [...(acc?.controllers || []), ...(curr?.controllers || [])],
-      providers: [...(acc?.providers || []), ...(curr?.providers || [])],
-      exports: [...(acc?.exports || []), ...(curr?.exports || [])]
-    }),
-    {}
-  );
-
-  return merged as DynamicModule;
-};

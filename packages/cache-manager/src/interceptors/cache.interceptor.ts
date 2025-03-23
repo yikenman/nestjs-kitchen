@@ -38,7 +38,7 @@ export class CacheInterceptor implements NestInterceptor {
     try {
       key = await this.trackBy(context);
 
-      if (isNil(key)) {
+      if (!key) {
         if (this.cacheManager[CACHE_VERBOSE_LOG]) {
           Logger.warn(`Invalid cache key. Falling back to the original method without caching.`, 'CacheInterceptor');
         }

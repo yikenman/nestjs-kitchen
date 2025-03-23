@@ -10,3 +10,9 @@ export const CACHE_RESULT_OPTIONS = 'CACHE_RESULT_OPTIONS';
 export const CACHE_VERBOSE_LOG = 'CACHE_VERBOSE_LOG';
 
 export const CACHE_MANAGER_SYMBOL = Symbol('CACHE_MANAGER');
+
+export const WEBSOCKETS_META_PREFIX = 'websockets:';
+export const MICROSERVICES_META_PREFIX = 'microservices:';
+export const GRAPHQL_META_PREFIX = 'graphql:';
+
+export const DEFAULT_ARGS_ALG = 'md5';

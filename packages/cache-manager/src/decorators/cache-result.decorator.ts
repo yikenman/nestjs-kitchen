@@ -39,7 +39,7 @@ export const CacheResult = () => {
       const verbose: boolean = cacheManager[CACHE_VERBOSE_LOG];
       const options: CacheResultOptions = cacheManager[CACHE_RESULT_OPTIONS];
 
-      if (!isValidMethod(originalMethod)) {
+      if (!isValidMethod(propertyDescriptor.value)) {
         if (verbose) {
           Logger.warn(
             `"method: ${propertyKey}" is not a normal method. Falling back to the original method without caching.`,
@@ -53,14 +53,17 @@ export const CacheResult = () => {
       let ttl: number | undefined = undefined;
 
       try {
-        const keyOrFactroy = getMetadata<string | Function>(CACHE_KEY_METADATA, [originalMethod, target.constructor]);
+        const keyOrFactroy = getMetadata<string | Function>(CACHE_KEY_METADATA, [
+          propertyDescriptor.value,
+          target.constructor
+        ]);
         key =
           (isFunction(keyOrFactroy) ? await keyOrFactroy(args) : keyOrFactroy) ??
           `${target.constructor.name}.${propertyKey}:${hashNoCoerce.hash(args, {
             ...options
           })}`;
 
-        if (isNil(key)) {
+        if (!key) {
           if (verbose) {
             Logger.warn(
               `Invalid cache key. Falling back to the original method without caching.`,
@@ -75,7 +78,10 @@ export const CacheResult = () => {
           return value;
         }
 
-        const ttlOrFactroy = getMetadata<number | Function>(CACHE_TTL_METADATA, [originalMethod, target.constructor]);
+        const ttlOrFactroy = getMetadata<number | Function>(CACHE_TTL_METADATA, [
+          propertyDescriptor.value,
+          target.constructor
+        ]);
         ttl = (isFunction(ttlOrFactroy) ? await ttlOrFactroy(args) : ttlOrFactroy) ?? undefined;
       } catch (error) {
         if (verbose) {
