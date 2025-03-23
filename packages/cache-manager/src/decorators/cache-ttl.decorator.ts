@@ -10,9 +10,8 @@ type CacheTTLArgumentFactory = (args: any[]) => Promise<number> | number;
  *
  * Supports both static numeric values and dynamic TTL values via a callback function.
  *
- * - When applied to HTTP, WebSocket, Microservice, or GraphQL methods, the callback receives the `ExecutionContext` as an argument.
- * - When applied to regular methods, the callback receives the method parameters.
- * - When applied to a class, only a callback function is allowed.
+ * - When applied to HTTP, WebSocket, Microservice, or GraphQL methods, the callback receives an `ExecutionContext` as an argument.
+ * - When applied to regular methods, the callback receives the corresponding method parameters.
  *
  * @example
  * ```typescript

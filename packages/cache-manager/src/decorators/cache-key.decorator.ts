@@ -10,8 +10,8 @@ type CacheKeyArgumentFactory = (args: any[]) => Promise<string> | string;
  *
  * Supports both static string keys and dynamic keys via a callback function.
  *
- * - When applied to HTTP, WebSocket, Microservice, or GraphQL methods, the callback receives the `ExecutionContext` as an argument.
- * - When applied to regular methods, the callback receives the method parameters.
+ * - When applied to HTTP, WebSocket, Microservice, or GraphQL methods, the callback receives an `ExecutionContext` as an argument.
+ * - When applied to regular methods, the callback receives the corresponding method parameters.
  * - When applied to a class, only a callback function is allowed.
  *
  * @example
