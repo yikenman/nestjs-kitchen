@@ -19,6 +19,31 @@ import {
   setCacheResultMetdata
 } from '../utils';
 
+/**
+ * Decorator that applies a cache mechanism to regular method, enabling caching for method results.
+ *
+ * - Only applicable to regular methods (non-HTTP/WebSocket/Microservice/GraphQL methods).
+ * - Compatible with `@CacheKey` and `@CacheTTL` for cache control.
+ * - Automatically disabled when applied to HTTP, WebSocket, Microservice, or GraphQL methods.
+ *
+ * @example
+ * ```typescript
+ * class ExampleService {
+ *   ⁣@CacheResult()
+ *   async fetchData() { ... }
+ *
+ *   ⁣@CacheResult()
+ *   ⁣@CacheKey((...args) => `data:${args[0]}`)
+ *   ⁣@CacheTTL(60)
+ *   async getItemById(id: number) { ... }
+ * }
+ * ```
+ *
+ * @see `@CacheKey`
+ * @see `@CacheTTL`
+ *
+ * @publicApi
+ */
 export const CacheResult = () => {
   const injectCacheManager = Inject(CACHE_MANAGER);
 
