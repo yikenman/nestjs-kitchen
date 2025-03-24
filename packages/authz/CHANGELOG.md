@@ -1,5 +1,11 @@
 # @nestjs-kitchen/authz
 
+## 2.0.4
+
+### Patch Changes
+
+- cad23b8: chore: use tsc & remove tsup
+
 ## 2.0.3
 
 ### Patch Changes

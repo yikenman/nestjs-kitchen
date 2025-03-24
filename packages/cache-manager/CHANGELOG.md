@@ -1,5 +1,11 @@
 # @nestjs-kitchen/cache-manager
 
+## 2.0.2
+
+### Patch Changes
+
+- cad23b8: chore: use tsc & remove tsup
+
 ## 2.0.1
 
 ### Patch Changes
