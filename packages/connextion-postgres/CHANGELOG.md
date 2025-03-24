@@ -1,5 +1,16 @@
 # @nestjs-kitchen/connextion-postgres
 
+## 2.0.3
+
+### Patch Changes
+
+- 671632a: chore: enable isolatedModules
+- 671632a: chore: bump deps version & fix babel cve
+- Updated dependencies [671632a]
+- Updated dependencies [671632a]
+- Updated dependencies [671632a]
+  - @nestjs-kitchen/connextion@2.0.3
+
 ## 2.0.2
 
 ### Patch Changes

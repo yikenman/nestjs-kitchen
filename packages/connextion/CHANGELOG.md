@@ -1,5 +1,13 @@
 # @nestjs-kitchen/connextion
 
+## 2.0.3
+
+### Patch Changes
+
+- 671632a: fix: exported types & inject token
+- 671632a: chore: enable isolatedModules
+- 671632a: chore: bump deps version & fix babel cve
+
 ## 2.0.2
 
 ### Patch Changes
