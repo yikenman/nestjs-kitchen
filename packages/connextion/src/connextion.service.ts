@@ -3,7 +3,7 @@ import { ModuleRef } from '@nestjs/core';
 import type { ConnextionInstance } from './connextion.instance';
 import { INJECT_TOKEN_ID, INSTANCE_TOKEN_MAP } from './constants';
 import { ConnextionError } from './errors';
-import { type ConnectionOptionName, type OmitClassInstance, joinStrs } from './utils';
+import { type ConnectionOptionName, type OmitClassInstance } from './utils';
 
 const preserveProps = new Set([
   'beforeApplicationShutdown',
@@ -26,6 +26,7 @@ export const createConnextionService = <N extends string, I>() => {
       readonly _injectTokenId: string,
       @Inject(INSTANCE_TOKEN_MAP)
       readonly instanceTokens: Readonly<Record<string, string>>,
+      @Inject(ModuleRef)
       readonly _moduleRef: ModuleRef
     ) {
       return new Proxy(this, {
