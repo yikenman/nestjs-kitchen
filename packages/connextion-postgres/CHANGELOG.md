@@ -1,5 +1,13 @@
 # @nestjs-kitchen/connextion-postgres
 
+## 2.0.4
+
+### Patch Changes
+
+- cad23b8: chore: use tsc & remove tsup
+- Updated dependencies [cad23b8]
+  - @nestjs-kitchen/connextion@2.0.4
+
 ## 2.0.3
 
 ### Patch Changes
