@@ -38,6 +38,11 @@ jobs:
     strategy:
       matrix:
         include: ${{ fromJSON(needs.list.outputs.package) }}
+    services:
+      redis:
+        image: ${{ matrix.name == '@nestjs-kitchen/cache-manager' && 'redis:latest' || '' }}
+        ports:
+          - 6379:6379
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
