@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "NodeNext",
+    "module": "commonjs",
     "lib": [
       "ESNext"
     ],
@@ -10,19 +10,13 @@
     "allowSyntheticDefaultImports": true,
     "strictNullChecks": true,
     "target": "ES2021",
-    "sourceMap": true,
-    "outDir": "./dist",
     "baseUrl": "./",
     "skipLibCheck": true,
     "esModuleInterop": true,
     "isolatedModules": true
   },
   "include": [
+    "test",
     "src"
-  ],
-  "references": [
-    {
-      "path": "./tsconfig.node.json"
-    }
   ]
 }
