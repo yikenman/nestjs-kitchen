@@ -1,5 +1,13 @@
 # @nestjs-kitchen/connextion-postgres
 
+## 2.0.2
+
+### Patch Changes
+
+- e7005df: chore: bump deps version
+- Updated dependencies [e7005df]
+  - @nestjs-kitchen/connextion@2.0.2
+
 ## 2.0.1
 
 ### Patch Changes
