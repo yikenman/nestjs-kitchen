@@ -26,7 +26,7 @@ export const createConnextionService = <N extends string, I>() => {
       readonly _injectTokenId: string,
       @Inject(INSTANCE_TOKEN_MAP)
       readonly instanceTokens: Readonly<Record<string, string>>,
-      @Inject(ModuleRef)
+      @Inject()
       readonly _moduleRef: ModuleRef
     ) {
       return new Proxy(this, {
