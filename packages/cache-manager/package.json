@@ -1,5 +1,6 @@
 {
   "name": "@nestjs-kitchen/cache-manager",
+  "description": "A better caching module for NestJS, fully compatible with @nestjs/cache-manager v3",
   "version": "1.0.0",
   "homepage": "https://github.com/yikenman/nestjs-kitchen",
   "repository": "https://github.com/yikenman/nestjs-kitchen",
