@@ -1,5 +1,11 @@
 # @nestjs-kitchen/authz
 
+## 2.0.5
+
+### Patch Changes
+
+- 545fba8: feat: support accessing request object in authenticate.
+
 ## 2.0.4
 
 ### Patch Changes
