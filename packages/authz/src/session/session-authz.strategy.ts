@@ -41,7 +41,7 @@ export const createSessionAuthzStrategy = ([SESSION_STRATEGY, AUTHZ_PROVIDER, AL
       let user: unknown = undefined;
 
       try {
-        user = await this.authzProvider.authenticate(payload);
+        user = await this.authzProvider.authenticate(payload, req);
       } catch (error) {
         return [
           null,
