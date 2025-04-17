@@ -7,7 +7,7 @@
 [![codecov](https://codecov.io/gh/yikenman/nestjs-kitchen/graph/badge.svg?token=43EG2T8LKS)](https://codecov.io/gh/yikenman/nestjs-kitchen)
 [![Release](https://github.com/yikenman/nestjs-kitchen/actions/workflows/release.yml/badge.svg)](https://github.com/yikenman/nestjs-kitchen/actions/workflows/release.yml)
 
-Convenient tools to cook up your NextJS application.
+Convenient tools to serve your NextJS application.
 
 ---
 

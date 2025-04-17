@@ -67,13 +67,13 @@ const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN, ASYNC_OPTIONS_TYPE, OPTIO
           throw new AuthzError(`InternalError: Missing parameter 'global' or 'routes' in configuration.`);
         }
 
-        if (store.globalInited) {
-          throw new AuthzError(
-            `InternalError: Cannot initialize mutiple global modules. Only one global module is allowed.`
-          );
-        }
-
         if (global) {
+          if (store.globalInited) {
+            throw new AuthzError(
+              `InternalError: Cannot initialize mutiple global modules. Only one global module is allowed.`
+            );
+          }
+
           store.globalInited += 1;
         }
 
