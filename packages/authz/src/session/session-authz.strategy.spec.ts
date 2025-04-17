@@ -127,7 +127,7 @@ describe('Session Authz Strategy', () => {
       const user = await sessionStrategy.validate(req);
 
       expect(mockAuthzProvider.authenticate).toHaveBeenCalledTimes(1);
-      expect(mockAuthzProvider.authenticate).toHaveBeenCalledWith(mockPayload);
+      expect(mockAuthzProvider.authenticate).toHaveBeenCalledWith(mockPayload, req);
 
       expect(getAlsStore).toHaveBeenCalledTimes(1);
       expect(getAlsStore).toHaveBeenCalledWith(mockAls);

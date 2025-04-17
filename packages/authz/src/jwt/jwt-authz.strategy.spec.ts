@@ -156,7 +156,7 @@ describe('Jwt Authz Strategy', () => {
       expect(jwt.verify).toHaveBeenCalledWith('test-token', 'test-secret', jwtAuthzOptions.jwt.verify);
 
       expect(mockAuthzProvider.authenticate).toHaveBeenCalledTimes(1);
-      expect(mockAuthzProvider.authenticate).toHaveBeenCalledWith(jest.mocked(jwt.verify).mock.results[0].value);
+      expect(mockAuthzProvider.authenticate).toHaveBeenCalledWith(jest.mocked(jwt.verify).mock.results[0].value, req);
 
       expect(req[PASSPORT_PROPERTY]).toEqual(jwtAuthzOptions.passportProperty);
       expect(store.user).toEqual(mockUser);
@@ -373,7 +373,8 @@ describe('RefreshStrategy', () => {
 
       expect(mockAuthzProvider.authenticate).toHaveBeenCalledTimes(1);
       expect(mockAuthzProvider.authenticate).toHaveBeenCalledWith(
-        jest.mocked(decodeMsgpackrString).mock.results[0].value
+        jest.mocked(decodeMsgpackrString).mock.results[0].value,
+        req
       );
 
       expect(req[PASSPORT_PROPERTY]).toEqual(jwtAuthzOptions.passportProperty);

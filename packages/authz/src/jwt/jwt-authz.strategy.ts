@@ -49,7 +49,7 @@ export const createJwtStrategy = ([JWT_STRATEGY, AUTHZ_PROVIDER, ALS_PROVIDER]: 
 
       try {
         const payload = jwt.verify(token, authOptions.jwt.secretOrPublicKey!, authOptions.jwt.verify);
-        user = await this.authzProvider.authenticate(payload);
+        user = await this.authzProvider.authenticate(payload, req);
       } catch (error) {
         return [
           null,
@@ -119,7 +119,7 @@ export const createRefreshStrategy = ([JWT_REFRESH_STRATEGY, AUTHZ_PROVIDER, ALS
 
         const decodePayload = decodeMsgpackrString(payload.data);
 
-        user = await this.authzProvider.authenticate(decodePayload);
+        user = await this.authzProvider.authenticate(decodePayload, req);
       } catch (error) {
         return [
           null,
