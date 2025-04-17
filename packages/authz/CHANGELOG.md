@@ -1,5 +1,11 @@
 # @nestjs-kitchen/authz
 
+## 2.0.6
+
+### Patch Changes
+
+- 4f5c35b: fix: can create global module together with normal module
+
 ## 2.0.5
 
 ### Patch Changes
