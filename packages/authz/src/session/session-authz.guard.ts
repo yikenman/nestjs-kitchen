@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Inject, mixin } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Inject, type Type, mixin } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import type { AsyncLocalStorage } from 'async_hooks';

@@ -1,7 +1,9 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import {
+  type ConfigurableModuleAsyncOptions,
   ConfigurableModuleBuilder,
   DynamicModule,
+  type ExecutionContext,
   Inject,
   MiddlewareConsumer,
   Module,
@@ -11,6 +13,7 @@ import {
   UseGuards,
   applyDecorators
 } from '@nestjs/common';
+import type { Reflector } from '@nestjs/core';
 import { uid } from 'uid';
 import { AuthzProviderClass } from '../authz.provider';
 import { PREFIX, ROUTES_OPTIONS } from '../constants';
@@ -18,8 +21,13 @@ import { AuthzError } from '../errors';
 import {
   type AbstractConstructor,
   type ApplyDecorators,
+  type AuthzDecoParams,
   type AuthzMetaParams,
+  type AuthzModuleBaseOptions,
   type AuthzModuleRoutesOptions,
+  type CookieOptionsWithSecret,
+  type DeepReadonly,
+  type MethodParameters,
   type RoutesOptions,
   createAuthzDecoratorFactory,
   mergeDynamicModuleConfigs,
@@ -30,6 +38,7 @@ import { createJwtAuthzGuard, createJwtRefreshAuthzGuard } from './jwt-authz.gua
 import {
   type JwtAuthzModuleOptions,
   type JwtAuthzOptions,
+  type JwtOptions,
   normalizedJwtAuthzModuleOptions
 } from './jwt-authz.interface';
 import { createJwtAuthzService } from './jwt-authz.service';

@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { Inject, Injectable, mixin } from '@nestjs/common';
+import { Inject, Injectable, type Type, mixin } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import type { Request } from 'express';
 import jwt from 'jsonwebtoken';
