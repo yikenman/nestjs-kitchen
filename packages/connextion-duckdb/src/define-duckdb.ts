@@ -1,6 +1,14 @@
-import { defineConnextionBuilder } from '@nestjs-kitchen/connextion';
+import {
+  type AsyncModuleOptions,
+  type ConnectionOptionName,
+  type ConnextionInstance,
+  type ModuleOptions,
+  defineConnextionBuilder
+} from '@nestjs-kitchen/connextion';
+import type { DynamicModule, Type } from '@nestjs/common';
 import { DEFAULT_INSTANCE_NAME } from './constants';
 import { DuckDBInstance } from './duckdb.instance';
+import type { DuckDBInstanceOptions } from './types';
 
 const innerDefineDuckDB = defineConnextionBuilder({
   connextionName: 'DuckDB',
