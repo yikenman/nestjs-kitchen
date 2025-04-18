@@ -1,3 +1,4 @@
+import type { JsonWebKeyInput, KeyObject, PrivateKeyInput, PublicKeyInput } from 'node:crypto';
 import { type PrivateKey, type PublicKey, type Secret, type SignOptions, type VerifyOptions } from 'jsonwebtoken';
 import { DEFAULT_PASSPORT_PROPERTY_VALUE } from '../constants';
 import { type AuthzModuleBaseOptions, normalizedArray, normalizedObject } from '../utils';

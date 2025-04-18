@@ -5,6 +5,7 @@ import { createConnextionService } from './connextion.service';
 import { DEFAULT_INSTANCE_NAME, INJECT_TOKEN_ID, INSTANCE_TOKEN_MAP, PREFIX } from './constants';
 import {
   type AsyncModuleOptions,
+  type ConnectionOptionName,
   type ConnectionOptions,
   type ModuleOptions,
   createAsyncProviders,

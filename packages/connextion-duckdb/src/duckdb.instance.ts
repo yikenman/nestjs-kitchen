@@ -1,4 +1,11 @@
-import { type DuckDBConnection, DuckDBInstance as DuckDBInstanceClass } from '@duckdb/node-api';
+import {
+  type DuckDBAppender,
+  type DuckDBConnection,
+  DuckDBInstance as DuckDBInstanceClass,
+  type DuckDBMaterializedResult,
+  type DuckDBResult
+} from '@duckdb/node-api';
+import type { DuckDBResultReader } from '@duckdb/node-api/lib/DuckDBResultReader';
 import { ConnextionInstance } from '@nestjs-kitchen/connextion';
 import { Logger } from '@nestjs/common';
 import { CONNEXTION_DUCKDB_DEBUG, DuckDBResultAsyncMethods, DuckDBResultReaderAsyncMethods } from './constants';

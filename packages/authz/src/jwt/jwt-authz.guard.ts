@@ -1,8 +1,9 @@
 import type { AsyncLocalStorage } from 'node:async_hooks';
-import { CanActivate, ExecutionContext, Inject, mixin } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Inject, type Type, mixin } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request } from 'express';
+import type { Observable } from 'rxjs';
 import { AuthzProviderClass } from '../authz.provider';
 import { AuthzAnonymousError, type AuthzError } from '../errors';
 import {

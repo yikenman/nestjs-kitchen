@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { Inject, NestMiddleware, mixin } from '@nestjs/common';
+import { Inject, NestMiddleware, type Type, mixin } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 import { JwtValidationType } from '../constants';
 import { type CookieOptionsWithSecret, type OmitClassInstance, createSetCookieFn } from '../utils';
