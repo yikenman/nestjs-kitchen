@@ -1,5 +1,5 @@
 import { PATH_METADATA } from '@nestjs/common/constants';
-import { hasher } from 'node-object-hash';
+import { type Hasher, hasher } from 'node-object-hash';
 import {
   CACHE_RESULT_METADATA,
   DEFAULT_ARGS_ALG,
