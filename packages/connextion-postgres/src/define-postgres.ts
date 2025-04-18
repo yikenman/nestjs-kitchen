@@ -1,7 +1,15 @@
-import { defineConnextionBuilder } from '@nestjs-kitchen/connextion';
+import {
+  type AsyncModuleOptions,
+  type ConnectionOptionName,
+  type ConnextionInstance,
+  type ModuleOptions,
+  defineConnextionBuilder
+} from '@nestjs-kitchen/connextion';
+import type { DynamicModule, Type } from '@nestjs/common';
 import { DEFAULT_INSTANCE_NAME } from './constants';
 import { PostgresInstance } from './postgres.instance';
 import { createTransaction } from './transaction';
+import type { PostgresInstanceOptions } from './types';
 
 const innerDefinePostgres = defineConnextionBuilder({
   connextionName: 'Postgres',
