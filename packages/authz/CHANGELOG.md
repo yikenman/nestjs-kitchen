@@ -1,5 +1,11 @@
 # @nestjs-kitchen/authz
 
+## 2.0.7
+
+### Patch Changes
+
+- cad1216: fix: fix types
+
 ## 2.0.6
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @nestjs-kitchen/cache-manager
 
+## 2.0.3
+
+### Patch Changes
+
+- cad1216: fix: fix types
+
 ## 2.0.2
 
 ### Patch Changes

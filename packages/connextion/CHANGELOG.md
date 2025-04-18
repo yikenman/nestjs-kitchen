@@ -1,5 +1,11 @@
 # @nestjs-kitchen/connextion
 
+## 2.0.5
+
+### Patch Changes
+
+- cad1216: fix: fix types
+
 ## 2.0.4
 
 ### Patch Changes

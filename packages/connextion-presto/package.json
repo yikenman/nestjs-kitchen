@@ -2,7 +2,7 @@
   "name": "@nestjs-kitchen/connextion-presto",
   "private": false,
   "description": "A flexible module to provide presto-client interface in NextJS.",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "homepage": "https://github.com/yikenman/nestjs-kitchen",
   "repository": "https://github.com/yikenman/nestjs-kitchen",
   "author": "yikenman",

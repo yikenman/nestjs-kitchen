@@ -1,5 +1,13 @@
 # @nestjs-kitchen/connextion-duckdb
 
+## 2.0.5
+
+### Patch Changes
+
+- cad1216: fix: fix types
+- Updated dependencies [cad1216]
+  - @nestjs-kitchen/connextion@2.0.5
+
 ## 2.0.4
 
 ### Patch Changes
