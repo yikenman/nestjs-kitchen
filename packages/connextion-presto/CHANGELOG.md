@@ -1,5 +1,11 @@
 # @nestjs-kitchen/connextion-presto
 
+## 2.0.6
+
+### Patch Changes
+
+- d1fc5e3: chore: remove tsup
+
 ## 2.0.5
 
 ### Patch Changes
