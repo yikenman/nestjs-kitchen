@@ -1,16 +1,8 @@
-import session from 'express-session';
 import { DEFAULT_PASSPORT_PROPERTY_VALUE } from '../constants';
 import type { AuthzModuleBaseOptions } from '../utils';
 
-export type SessionOptions = Parameters<typeof session>[0];
-
 export type SessionAuthzModuleOptions = Partial<AuthzModuleBaseOptions> & {
-  /**
-   * Session options.
-   *
-   * Same as `express-session` [session options](https://www.npmjs.com/package/express-session#options).
-   */
-  session: SessionOptions & {
+  session?: {
     /**
      * Option to keep session information after regenerating.
      *
@@ -21,19 +13,14 @@ export type SessionAuthzModuleOptions = Partial<AuthzModuleBaseOptions> & {
 };
 
 export const normalizedSessionAuthzModuleOptions = (options: Partial<SessionAuthzModuleOptions> = {}) => {
-  const { keepSessionInfo, ...sessionOpts } = options.session ?? {};
+  const { keepSessionInfo } = options.session ?? {};
 
   return {
     defaultOverride: options.defaultOverride || false,
     passportProperty: options.passportProperty || DEFAULT_PASSPORT_PROPERTY_VALUE,
     skipFalsyMetadata: options.skipFalsyMetadata || false,
     defaultAllowAnonymous: options.defaultAllowAnonymous || false,
-    keepSessionInfo,
-    session: {
-      resave: false,
-      saveUninitialized: false,
-      ...sessionOpts
-    } as SessionOptions
+    keepSessionInfo
   };
 };
 

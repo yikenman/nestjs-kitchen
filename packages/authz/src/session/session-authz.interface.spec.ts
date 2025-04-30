@@ -15,12 +15,6 @@ describe('Session Authz Interface', () => {
       expect(result.passportProperty).toBe(DEFAULT_PASSPORT_PROPERTY_VALUE);
       expect(result.skipFalsyMetadata).toBe(false);
       expect(result.defaultAllowAnonymous).toBe(false);
-
-      expect(result.session).toBeDefined();
-      expect(result.session).toMatchObject({
-        resave: false,
-        saveUninitialized: false
-      });
     });
 
     it('should normalize options with empty session', () => {
@@ -30,12 +24,6 @@ describe('Session Authz Interface', () => {
       expect(result.passportProperty).toBe(DEFAULT_PASSPORT_PROPERTY_VALUE);
       expect(result.skipFalsyMetadata).toBe(false);
       expect(result.defaultAllowAnonymous).toBe(false);
-
-      expect(result.session).toBeDefined();
-      expect(result.session).toMatchObject({
-        resave: false,
-        saveUninitialized: false
-      });
     });
 
     it('should override default values if provided in options', () => {
@@ -45,7 +33,7 @@ describe('Session Authz Interface', () => {
         skipFalsyMetadata: true,
         defaultAllowAnonymous: true,
         session: {
-          secret: '123456'
+          keepSessionInfo: true
         }
       };
 
@@ -54,13 +42,7 @@ describe('Session Authz Interface', () => {
       expect(result.passportProperty).toBe('custom');
       expect(result.skipFalsyMetadata).toBe(true);
       expect(result.defaultAllowAnonymous).toBe(true);
-
-      expect(result.session).toBeDefined();
-      expect(result.session).toMatchObject({
-        secret: options.session.secret,
-        resave: false,
-        saveUninitialized: false
-      });
+      expect(result.keepSessionInfo).toBe(true);
     });
   });
 });

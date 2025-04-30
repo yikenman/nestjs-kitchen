@@ -35,10 +35,6 @@ import { SessionUnderJwtController } from './session-under-jwt.controller';
       routes: [Jwt2UnderJwt1Controller, JwtSessionRefreshController, JwtSessionAuthzController]
     }),
     SessionAuthzModule3.register({
-      session: {
-        name: 'session-id-9012345678',
-        secret: '9012345678'
-      },
       routes: [
         Session4UnderSession3Controller,
         SessionUnderJwtController,
@@ -47,10 +43,6 @@ import { SessionUnderJwtController } from './session-under-jwt.controller';
       ]
     }),
     SessionAuthzModule4.register({
-      session: {
-        name: 'session-id-0123456789',
-        secret: '0123456789'
-      },
       routes: [Session4UnderSession3Controller, JwtSessionAuthzController]
     })
   ],

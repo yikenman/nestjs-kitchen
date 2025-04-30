@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { Request } from 'express';
+import session from 'express-session';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { uid } from 'uid';
@@ -9,6 +10,7 @@ import { AppModule } from './app/app.module';
 
 describe('E2E test', () => {
   let app: INestApplication;
+  const secret = '5678901234';
 
   beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
@@ -16,6 +18,7 @@ describe('E2E test', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.use(session({ name: `session-id-${secret}`, secret: secret, resave: false, saveUninitialized: false }));
     await app.init();
   });
 
@@ -136,18 +139,9 @@ describe('E2E test', () => {
           headers: {
             cookie: res.headers['set-cookie'][0]
           },
-          secret: '5678901234'
+          secret: secret
         } as unknown as Request).signedCookies
-      ).toHaveProperty('session-id-5678901234');
-
-      expect(
-        normalCookieParser({
-          headers: {
-            cookie: res.headers['set-cookie'][0]
-          },
-          secret: '6789012345'
-        } as unknown as Request).signedCookies
-      ).not.toHaveProperty('session-id-6789012345');
+      ).toHaveProperty(`session-id-${secret}`);
     });
 
     it('should log in successfully and retrieve user data (GET)', async () => {
@@ -216,9 +210,9 @@ describe('E2E test', () => {
             headers: {
               cookie: res.headers['set-cookie'][0]
             },
-            secret: '9012345678'
+            secret: secret
           } as unknown as Request).signedCookies
-        ).toHaveProperty('session-id-9012345678');
+        ).toHaveProperty(`session-id-${secret}`);
       });
 
       it('should log in successfully and retrieve user data (GET)', async () => {
@@ -245,7 +239,7 @@ describe('E2E test', () => {
     describe('Apply one session authz on top of another session authz', () => {
       const base = '/mix/session-4-under-session-3';
 
-      it('should session token with the first session authz options', async () => {
+      it('should get session token with the express-session options', async () => {
         const res = await request(app.getHttpServer()).get(`${base}/log-in?userId=${userId}`);
 
         expect(
@@ -253,18 +247,9 @@ describe('E2E test', () => {
             headers: {
               cookie: res.headers['set-cookie'][0]
             },
-            secret: '9012345678'
+            secret: secret
           } as unknown as Request).signedCookies
-        ).toHaveProperty('session-id-9012345678');
-
-        expect(
-          normalCookieParser({
-            headers: {
-              cookie: res.headers['set-cookie'][0]
-            },
-            secret: '0123456789'
-          } as unknown as Request).signedCookies
-        ).not.toHaveProperty('session-id-0123456789');
+        ).toHaveProperty(`session-id-${secret}`);
       });
 
       it('should log in successfully and retrieve user data from the last ALS store (GET)', async () => {
@@ -298,9 +283,9 @@ describe('E2E test', () => {
             headers: {
               cookie: res.headers['set-cookie'][0]
             },
-            secret: '9012345678'
+            secret: secret
           } as unknown as Request).signedCookies
-        ).toHaveProperty('session-id-9012345678');
+        ).toHaveProperty(`session-id-${secret}`);
       });
 
       it('should log in successfully and retrieve user data (GET)', async () => {
