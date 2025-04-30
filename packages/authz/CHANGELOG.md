@@ -1,5 +1,11 @@
 # @nestjs-kitchen/authz
 
+## 3.0.0
+
+### Major Changes
+
+- c8bd9d8: breakchange: remove internal `express-session` usage.
+
 ## 2.0.7
 
 ### Patch Changes
