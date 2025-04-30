@@ -2,7 +2,6 @@ import { Injectable, SetMetadata, UseGuards, applyDecorators } from '@nestjs/com
 import { Test, TestingModule } from '@nestjs/testing';
 import { AsyncLocalStorage } from 'async_hooks';
 import type { NextFunction, Request, Response } from 'express';
-import session from 'express-session';
 import { uid } from 'uid';
 import { AuthzProviderClass } from '../authz.provider';
 import { PREFIX, ROUTES_OPTIONS } from '../constants';
@@ -24,10 +23,6 @@ jest.mock('@nestjs/common', () => {
     UseGuards: jest.fn(actual.UseGuards),
     applyDecorators: jest.fn(actual.applyDecorators)
   };
-});
-
-jest.mock('express-session', () => {
-  return jest.fn(() => (req: Request, res: Response, next: NextFunction) => next());
 });
 
 jest.mock('uid', () => {
@@ -240,7 +235,7 @@ describe('Session Authz Module', () => {
       beforeEach(async () => {
         mockSessionAuthzOptions = {
           session: {
-            secret: '123456'
+            keepSessionInfo: true
           },
           passportProperty: 'user',
           routes: '/path-a'
@@ -305,7 +300,7 @@ describe('Session Authz Module', () => {
     describe('register', () => {
       const mockSessionAuthzOptions: ModuleRegisterOptions = {
         session: {
-          secret: '123456'
+          keepSessionInfo: true
         },
         passportProperty: 'user',
         routes: '/path-a'
@@ -378,7 +373,7 @@ describe('Session Authz Module', () => {
     describe('registerAsync', () => {
       const mockSessionAuthzOptions: ModuleRegisterOptions = {
         session: {
-          secret: '123456'
+          keepSessionInfo: true
         },
         passportProperty: 'user',
         routes: '/path-a'
@@ -457,7 +452,7 @@ describe('Session Authz Module', () => {
     describe('configure', () => {
       const baseModuleOptions: ModuleRegisterOptions = {
         session: {
-          secret: '123456'
+          keepSessionInfo: true
         },
         passportProperty: 'user',
         routes: '/path-a'
@@ -488,13 +483,7 @@ describe('Session Authz Module', () => {
 
         moduleInstance.configure(middlewareConsumer as any);
 
-        expect(session).toHaveBeenCalledTimes(1);
-        expect(session).toHaveBeenCalledWith(
-          jest.mocked(normalizedSessionAuthzModuleOptions).mock.results[0].value.session
-        );
-
         expect(middlewareConsumer.apply).toHaveBeenCalledWith(
-          jest.mocked(session).mock.results[0].value,
           jest.mocked(createSessionAuthzAlsMiddleware).mock.results[0].value
         );
         expect(middlewareConsumer.exclude).toHaveBeenCalledWith(...mockedExcludes);
@@ -524,13 +513,7 @@ describe('Session Authz Module', () => {
 
         moduleInstance.configure(middlewareConsumer as any);
 
-        expect(session).toHaveBeenCalledTimes(1);
-        expect(session).toHaveBeenCalledWith(
-          jest.mocked(normalizedSessionAuthzModuleOptions).mock.results[0].value.session
-        );
-
         expect(middlewareConsumer.apply).toHaveBeenCalledWith(
-          jest.mocked(session).mock.results[0].value,
           jest.mocked(createSessionAuthzAlsMiddleware).mock.results[0].value
         );
         expect(middlewareConsumer.exclude).toHaveBeenCalledWith(...mockedExcludes);

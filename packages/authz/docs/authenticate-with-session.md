@@ -1,5 +1,19 @@
 # Authenticate with Session
 
+**NOTE: ensure you have setup [`express-session`](https://www.npmjs.com/package/express-session).**
+
+```typescript
+import * as session from 'express-session';
+// somewhere in your initialization file
+app.use(
+  session({
+    secret: 'my-secret',
+    resave: false,
+    saveUninitialized: false,
+  }),
+);
+```
+
 ## 1. Create file `authz.provider.ts`:
 
 ```typescript

@@ -14,7 +14,6 @@ import {
   applyDecorators
 } from '@nestjs/common';
 import type { Reflector } from '@nestjs/core';
-import session from 'express-session';
 import { uid } from 'uid';
 import { AuthzProviderClass } from '../authz.provider';
 import { PREFIX, ROUTES_OPTIONS } from '../constants';
@@ -39,7 +38,6 @@ import { createSessionAuthzGuard } from './session-authz.guard';
 import {
   type SessionAuthzModuleOptions,
   type SessionAuthzOptions,
-  type SessionOptions,
   normalizedSessionAuthzModuleOptions
 } from './session-authz.interface';
 import { createSessionAuthzService } from './session-authz.service';
@@ -246,7 +244,6 @@ export const cereateSessionAuthzModule = <P, U, T extends AuthzProviderClass<P, 
     /**
      * Configures authz module.
      *
-     * Note: DO NOT register the same routes in multiple session authz modules, or import the same session authz module in the same module multiple times, express-session middleware will not work properly.
      */
     static register(options: Omit<typeof OPTIONS_TYPE, 'authzProvider'>): DynamicModule {
       const sessionAuthzOptions = normalizedSessionAuthzModuleOptions(options);
@@ -264,7 +261,6 @@ export const cereateSessionAuthzModule = <P, U, T extends AuthzProviderClass<P, 
     /**
      * Configures authz module asynchronously.
      *
-     * Note: DO NOT register the same routes in multiple session authz modules, express-session middleware will not work properly.
      */
     static registerAsync(options: typeof ASYNC_OPTIONS_TYPE): DynamicModule {
       return mergeDynamicModuleConfigs(super.registerAsync({ ...options, authzProvider }), getCommonConfigs(), {
@@ -291,7 +287,7 @@ export const cereateSessionAuthzModule = <P, U, T extends AuthzProviderClass<P, 
 
     configure(consumer: MiddlewareConsumer) {
       consumer
-        .apply(session(this.sessionAuthzOptions.session), SessionAuthzAlsMiddleware)
+        .apply(SessionAuthzAlsMiddleware)
         .exclude(...this.routesOpt.excludes)
         // nestjs v11 will be compatible with splat wildcard.
         .forRoutes(...(this.routesOpt.global ? ['*'] : this.routesOpt.routes));

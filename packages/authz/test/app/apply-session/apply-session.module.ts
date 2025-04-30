@@ -8,8 +8,7 @@ import { ApplyOnMethodController } from './apply-on-method.controller';
   imports: [
     SessionAuthzModule3.register({
       session: {
-        name: 'session-id-2345678901',
-        secret: '2345678901'
+        keepSessionInfo: true
       },
       routes: [ApplyOnBothController, ApplyOnClassController, ApplyOnMethodController]
     })

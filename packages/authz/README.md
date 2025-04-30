@@ -31,6 +31,22 @@ Once completed NestJS project setup, install this package and its dependencies:
 $ npm install --save @nestjs/passport passport @nestjs-kitchen/authz
 ```
 
+## Beark change
+
+- From `@nestjs-kitchen/authz` **v3**, [`express-session`](https://www.npmjs.com/package/express-session) had been removed from dependency. Please setup session manually:
+
+    ```typescript
+    import * as session from 'express-session';
+    // somewhere in your initialization file
+    app.use(
+      session({
+        secret: 'my-secret',
+        resave: false,
+        saveUninitialized: false,
+      }),
+    );
+    ```
+
 ## Usage
 
 1. Create file `authz.provider.ts`:
