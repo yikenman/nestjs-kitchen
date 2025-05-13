@@ -2,6 +2,7 @@ import type { EventEmitter } from 'node:stream';
 import dayjs from 'dayjs';
 import { type PoolClient, type Submittable } from 'pg';
 import { DATE_FORMAT, MAX_LENGTH, TRANSACTION_META } from './constants';
+import type { Options } from './types';
 
 export const isSubmittable = (val: any): val is Submittable => {
   return val && typeof val.submit === 'function';
@@ -97,7 +98,7 @@ export const createDebugLogger = (
   };
 };
 
-export const debugFactroy = (name: string, queryId: string, logger: (data: Record<any, any>) => void) => {
+export const debugFactroy = (name: string, queryId: string, host: string, logger: (data: Record<any, any>) => void) => {
   return {
     pool: {
       connect: <T extends () => Promise<PoolClient>>(callback: T) => {
@@ -113,12 +114,13 @@ export const debugFactroy = (name: string, queryId: string, logger: (data: Recor
           } finally {
             logger({
               Instance: name,
+              Host: host,
               Client: queryId,
               Type: 'Request new client',
               'Started On': startOn,
               'Ended On': getCurrentDateStr(),
               Status: err ? 'Failed' : 'Successful',
-              Error: err
+              Error: err?.code ? `[${err.code}]${err}` : err
             });
           }
         };
@@ -136,6 +138,7 @@ export const debugFactroy = (name: string, queryId: string, logger: (data: Recor
             (rest[0] as EventEmitter).on('end', () => {
               logger({
                 Instance: name,
+                Host: host,
                 Client: queryId,
                 Type: 'Submittable',
                 Text: text,
@@ -148,6 +151,7 @@ export const debugFactroy = (name: string, queryId: string, logger: (data: Recor
             (rest[0] as EventEmitter).on('error', (err) => {
               logger({
                 Instance: name,
+                Host: host,
                 Client: queryId,
                 Type: 'Submittable',
                 Text: text,
@@ -155,7 +159,7 @@ export const debugFactroy = (name: string, queryId: string, logger: (data: Recor
                 'Started On': startOn,
                 'Ended On': getCurrentDateStr(),
                 Status: 'Failed',
-                Error: err
+                Error: err?.code ? `[${err.code}]${err}` : err
               });
             });
           }
@@ -169,6 +173,7 @@ export const debugFactroy = (name: string, queryId: string, logger: (data: Recor
             if (!submittable) {
               logger({
                 Instance: name,
+                Host: host,
                 Client: queryId,
                 Type: 'Query',
                 Text: text,
@@ -176,7 +181,7 @@ export const debugFactroy = (name: string, queryId: string, logger: (data: Recor
                 'Started On': startOn,
                 'Ended On': getCurrentDateStr(),
                 Status: err ? 'Failed' : 'Successful',
-                Error: err
+                Error: err?.code ? `[${err.code}]${err}` : err
               });
             }
           }
@@ -195,12 +200,13 @@ export const debugFactroy = (name: string, queryId: string, logger: (data: Recor
           } finally {
             logger({
               Instance: name,
+              Host: host,
               Client: queryId,
               Type: 'Release client',
               'Started On': startOn,
               'Ended On': getCurrentDateStr(),
               Status: err ? 'Failed' : 'Successful',
-              Error: err
+              Error: err?.code ? `[${err.code}]${err}` : err
             });
           }
         };
@@ -234,4 +240,46 @@ export const withResolvers = <T>() => {
     reject = rej;
   });
   return { promise, resolve: resolve!, reject: reject! };
+};
+
+export const normalizeOptions = (options: Options): Omit<Options, 'hosts'>[] => {
+  const { host, hosts, port, ...rest } = options;
+
+  if (hosts) {
+    return hosts.map((ele) => ({
+      ...rest,
+      ...ele
+    }));
+  }
+
+  return [
+    {
+      ...rest,
+      host,
+      port
+    }
+  ];
+};
+
+const failoverErrorCodes = new Set([
+  'ECONNREFUSED',
+  'ETIMEDOUT',
+  'EHOSTUNREACH',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'ECONNRESET',
+  'EPIPE',
+  '57P01',
+  '57P02',
+  '57P03',
+  '55P03',
+  '55000',
+  '54000',
+  '53300',
+  '08006',
+  'XX000'
+]);
+
+export const isFailoverRequired = (err?: { code?: string }) => {
+  return !!(err?.code && failoverErrorCodes.has(`${err.code}`));
 };
