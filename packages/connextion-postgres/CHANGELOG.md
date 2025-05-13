@@ -1,5 +1,15 @@
 # @nestjs-kitchen/connextion-postgres
 
+## 2.1.0
+
+### Minor Changes
+
+- 33ad8aa: feat: support HA
+
+### Patch Changes
+
+- 33ad8aa: docs: update
+
 ## 2.0.6
 
 ### Patch Changes
