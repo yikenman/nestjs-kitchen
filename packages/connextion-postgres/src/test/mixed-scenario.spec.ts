@@ -28,6 +28,8 @@ const queryParams = [
   'select default as instance, submittable as type;'
 ];
 
+const testQuery = 'SELECT 1;';
+
 @Injectable()
 class TestService {
   constructor(
@@ -114,7 +116,16 @@ describe('Mixed Scenario', () => {
           connections: [
             {
               name: 'instance1',
-              host: 'instance_1_host'
+              hosts: [
+                {
+                  host: 'instance_1_host_1',
+                  port: 1
+                },
+                {
+                  host: 'instance_1_host_2',
+                  port: 2
+                }
+              ]
             },
             {
               name: 'instance2',
@@ -168,25 +179,89 @@ describe('Mixed Scenario', () => {
       expect(Query).toHaveBeenNthCalledWith(2, queryParams[4]);
       expect(Query).toHaveBeenNthCalledWith(3, queryParams[5]);
 
-      expect(mockClient.query).toHaveBeenCalledTimes(6);
-      expect(mockClient.query).toHaveBeenNthCalledWith(1, queryParams[0]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(2, queryParams[1]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(3, jest.mocked(Query).mock.results[0].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(4, jest.mocked(Query).mock.results[1].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[2]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(6, jest.mocked(Query).mock.results[2].value);
+      expect(mockClient.query).toHaveBeenCalledTimes(12);
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, jest.mocked(Query).mock.results[0].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[1].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(9, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(10, queryParams[2]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(11, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(12, jest.mocked(Query).mock.results[2].value);
 
       expect(mockClient.release).toHaveBeenCalledTimes(3);
-      expect(mockClient.release).toHaveBeenNthCalledWith(1, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(2, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(3, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(1, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(2, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(3, undefined);
 
       submittables.forEach((ele) => ele.emit('end'));
 
       expect(mockClient.release).toHaveBeenCalledTimes(6);
-      expect(mockClient.release).toHaveBeenNthCalledWith(4, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(5, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(6, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(4);
+      expect(mockClient.release).toHaveBeenNthCalledWith(5);
+      expect(mockClient.release).toHaveBeenNthCalledWith(6);
+    });
+
+    it('should retry if instance_1_host_1 is not available', async () => {
+      mockPool.connect.mockImplementation(
+        jest
+          .fn()
+          .mockRejectedValueOnce({ code: 'ECONNREFUSED' })
+          .mockResolvedValueOnce(mockClient)
+          .mockResolvedValueOnce(mockClient)
+          .mockResolvedValueOnce(mockClient)
+          .mockResolvedValueOnce(mockClient)
+          .mockResolvedValueOnce(mockClient)
+          .mockResolvedValueOnce(mockClient)
+      );
+
+      jest.mocked(mockClient.query).mockImplementation((...rest) => {
+        if (isSubmittable(rest[0])) {
+          return rest[0];
+        }
+        return result;
+      });
+
+      await expect(testService.complexQuery()).resolves.toBe(true);
+
+      expect(mockPool.connect).toHaveBeenCalledTimes(7);
+
+      const submittables: EventEmitter[] = jest.mocked(Query).mock.results.map((ele) => ele.value);
+
+      expect(Query).toHaveBeenCalledTimes(3);
+      expect(Query).toHaveBeenNthCalledWith(1, queryParams[3]);
+      expect(Query).toHaveBeenNthCalledWith(2, queryParams[4]);
+      expect(Query).toHaveBeenNthCalledWith(3, queryParams[5]);
+
+      expect(mockClient.query).toHaveBeenCalledTimes(12);
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, jest.mocked(Query).mock.results[0].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[1].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(9, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(10, queryParams[2]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(11, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(12, jest.mocked(Query).mock.results[2].value);
+
+      expect(mockClient.release).toHaveBeenCalledTimes(3);
+      expect(mockClient.release).toHaveBeenNthCalledWith(1, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(2, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(3, undefined);
+
+      submittables.forEach((ele) => ele.emit('end'));
+
+      expect(mockClient.release).toHaveBeenCalledTimes(6);
+      expect(mockClient.release).toHaveBeenNthCalledWith(4);
+      expect(mockClient.release).toHaveBeenNthCalledWith(5);
+      expect(mockClient.release).toHaveBeenNthCalledWith(6);
     });
 
     it('should handle and release if query failed', async () => {
@@ -194,17 +269,25 @@ describe('Mixed Scenario', () => {
 
       jest
         .mocked(mockClient.query)
+        .mockResolvedValueOnce([])
         .mockResolvedValueOnce(result)
+        .mockResolvedValueOnce([])
         .mockRejectedValueOnce(err)
+        .mockResolvedValueOnce([])
         .mockResolvedValueOnce(result)
-        .mockImplementation((ele) => ele);
+        .mockResolvedValueOnce([])
+        .mockImplementationOnce((ele) => ele)
+        .mockResolvedValueOnce([])
+        .mockImplementationOnce((ele) => ele)
+        .mockResolvedValueOnce([])
+        .mockImplementationOnce((ele) => ele);
 
       await expect(testService.complexQuery()).rejects.toThrow(new PostgresError(err, err));
 
       expect(mockPool.connect).toHaveBeenCalledTimes(2);
 
       expect(mockClient.release).toHaveBeenCalledTimes(2);
-      expect(mockClient.release).toHaveBeenNthCalledWith(1, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(1, undefined);
       expect(mockClient.release).toHaveBeenNthCalledWith(2, new PostgresError(err, err));
     });
 
@@ -225,16 +308,16 @@ describe('Mixed Scenario', () => {
       const submittables: EventEmitter[] = jest.mocked(Query).mock.results.map((ele) => ele.value);
 
       expect(mockClient.release).toHaveBeenCalledTimes(3);
-      expect(mockClient.release).toHaveBeenNthCalledWith(1, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(2, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(3, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(1, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(2, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(3, undefined);
 
       submittables.forEach((ele, i) => (i === 0 ? ele.emit('error', err) : ele.emit('end')));
 
       expect(mockClient.release).toHaveBeenCalledTimes(6);
       expect(mockClient.release).toHaveBeenNthCalledWith(4, new PostgresError(err, err));
-      expect(mockClient.release).toHaveBeenNthCalledWith(5, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(6, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(5);
+      expect(mockClient.release).toHaveBeenNthCalledWith(6);
     });
   });
 
@@ -257,31 +340,94 @@ describe('Mixed Scenario', () => {
 
       expect(mockPool.connect).toHaveBeenCalledTimes(4);
 
-      expect(mockClient.query).toHaveBeenCalledTimes(10);
+      expect(mockClient.query).toHaveBeenCalledTimes(14);
 
       expect(Query).toHaveBeenCalledTimes(3);
       expect(Query).toHaveBeenNthCalledWith(1, queryParams[3]);
       expect(Query).toHaveBeenNthCalledWith(2, queryParams[4]);
       expect(Query).toHaveBeenNthCalledWith(3, queryParams[5]);
 
-      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(2, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[0]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(4, queryParams[1]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(5, jest.mocked(Query).mock.results[0].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(6, jest.mocked(Query).mock.results[1].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(7, queryParams[2]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[2].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(9, 'COMMIT');
-      expect(mockClient.query).toHaveBeenNthCalledWith(10, 'COMMIT');
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, jest.mocked(Query).mock.results[0].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[1].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(9, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(10, queryParams[2]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(11, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(12, jest.mocked(Query).mock.results[2].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(13, 'COMMIT');
+      expect(mockClient.query).toHaveBeenNthCalledWith(14, 'COMMIT');
 
       expect(mockClient.release).toHaveBeenCalledTimes(3);
-      expect(mockClient.release).toHaveBeenNthCalledWith(1, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(2, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(3, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(1, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(2, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(3, undefined);
 
       await sleep();
-      expect(mockClient.release).toHaveBeenNthCalledWith(4, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(4);
+    });
+
+    it('should retry if instance_1_host_1 is not available', async () => {
+      mockPool.connect.mockImplementation(
+        jest
+          .fn()
+          .mockRejectedValueOnce({ code: 'ECONNREFUSED' })
+          .mockResolvedValueOnce(mockClient)
+          .mockResolvedValueOnce(mockClient)
+          .mockResolvedValueOnce(mockClient)
+          .mockResolvedValueOnce(mockClient)
+      );
+
+      jest.mocked(mockClient.query).mockImplementation((...rest) => {
+        if (isSubmittable(rest[0])) {
+          setTimeout(() => {
+            rest[0].emit('end');
+          }, 50);
+          return rest[0];
+        }
+        if (typeof rest[0] === 'string' && ['BEGIN', 'COMMIT', 'ROLLBACK'].includes(rest[0])) {
+          return rest[0];
+        }
+        return result;
+      });
+
+      await expect(testService.complexQueryWithOneTransaction()).resolves.toBe(true);
+
+      expect(mockPool.connect).toHaveBeenCalledTimes(5);
+
+      expect(mockClient.query).toHaveBeenCalledTimes(14);
+
+      expect(Query).toHaveBeenCalledTimes(3);
+      expect(Query).toHaveBeenNthCalledWith(1, queryParams[3]);
+      expect(Query).toHaveBeenNthCalledWith(2, queryParams[4]);
+      expect(Query).toHaveBeenNthCalledWith(3, queryParams[5]);
+
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, jest.mocked(Query).mock.results[0].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[1].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(9, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(10, queryParams[2]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(11, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(12, jest.mocked(Query).mock.results[2].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(13, 'COMMIT');
+      expect(mockClient.query).toHaveBeenNthCalledWith(14, 'COMMIT');
+
+      expect(mockClient.release).toHaveBeenCalledTimes(3);
+      expect(mockClient.release).toHaveBeenNthCalledWith(1, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(2, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(3, undefined);
+
+      await sleep();
+      expect(mockClient.release).toHaveBeenNthCalledWith(4);
     });
 
     it('should handle and release if query failed with service using transaction', async () => {
@@ -300,6 +446,10 @@ describe('Mixed Scenario', () => {
           return rest[0];
         }
 
+        if (rest[0] === testQuery) {
+          return rest[0];
+        }
+
         if (i === 1) {
           throw err;
         }
@@ -313,16 +463,18 @@ describe('Mixed Scenario', () => {
 
       expect(mockPool.connect).toHaveBeenCalledTimes(2);
 
-      expect(mockClient.query).toHaveBeenCalledTimes(6);
+      expect(mockClient.query).toHaveBeenCalledTimes(8);
 
       expect(Query).not.toHaveBeenCalled();
 
-      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(2, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[0]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(4, queryParams[1]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(5, 'ROLLBACK');
-      expect(mockClient.query).toHaveBeenNthCalledWith(6, 'ROLLBACK');
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, 'ROLLBACK');
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, 'ROLLBACK');
 
       expect(mockClient.release).toHaveBeenCalledTimes(2);
       expect(mockClient.release).toHaveBeenNthCalledWith(1, new PostgresError(err, err));
@@ -345,6 +497,10 @@ describe('Mixed Scenario', () => {
           return rest[0];
         }
 
+        if (rest[0] === testQuery) {
+          return rest[0];
+        }
+
         if (i === 2) {
           throw err;
         }
@@ -358,21 +514,24 @@ describe('Mixed Scenario', () => {
 
       expect(mockPool.connect).toHaveBeenCalledTimes(3);
 
-      expect(mockClient.query).toHaveBeenCalledTimes(9);
+      expect(mockClient.query).toHaveBeenCalledTimes(12);
 
       expect(Query).toHaveBeenCalledTimes(2);
       expect(Query).toHaveBeenNthCalledWith(1, queryParams[3]);
       expect(Query).toHaveBeenNthCalledWith(2, queryParams[4]);
 
-      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(2, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[0]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(4, queryParams[1]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(5, jest.mocked(Query).mock.results[0].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(6, jest.mocked(Query).mock.results[1].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(7, queryParams[2]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(8, 'ROLLBACK');
-      expect(mockClient.query).toHaveBeenNthCalledWith(9, 'ROLLBACK');
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, jest.mocked(Query).mock.results[0].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[1].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(9, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(10, queryParams[2]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(11, 'ROLLBACK');
+      expect(mockClient.query).toHaveBeenNthCalledWith(12, 'ROLLBACK');
 
       expect(mockClient.release).toHaveBeenCalledTimes(3);
       expect(mockClient.release).toHaveBeenNthCalledWith(1, new PostgresError(err, err));
@@ -401,6 +560,11 @@ describe('Mixed Scenario', () => {
         if (typeof rest[0] === 'string' && ['BEGIN', 'COMMIT', 'ROLLBACK'].includes(rest[0])) {
           return rest[0];
         }
+
+        if (rest[0] === testQuery) {
+          return rest[0];
+        }
+
         return result;
       });
 
@@ -408,32 +572,36 @@ describe('Mixed Scenario', () => {
 
       expect(mockPool.connect).toHaveBeenCalledTimes(4);
 
-      expect(mockClient.query).toHaveBeenCalledTimes(10);
+      expect(mockClient.query).toHaveBeenCalledTimes(14);
 
       expect(Query).toHaveBeenCalledTimes(3);
       expect(Query).toHaveBeenNthCalledWith(1, queryParams[3]);
       expect(Query).toHaveBeenNthCalledWith(2, queryParams[4]);
       expect(Query).toHaveBeenNthCalledWith(3, queryParams[5]);
 
-      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(2, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[0]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(4, queryParams[1]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(5, jest.mocked(Query).mock.results[0].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(6, jest.mocked(Query).mock.results[1].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(7, queryParams[2]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[2].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(9, 'ROLLBACK');
-      expect(mockClient.query).toHaveBeenNthCalledWith(10, 'ROLLBACK');
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, jest.mocked(Query).mock.results[0].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[1].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(9, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(10, queryParams[2]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(11, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(12, jest.mocked(Query).mock.results[2].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(13, 'ROLLBACK');
+      expect(mockClient.query).toHaveBeenNthCalledWith(14, 'ROLLBACK');
 
       expect(mockClient.release).toHaveBeenCalledTimes(3);
-      expect(mockClient.release).toHaveBeenNthCalledWith(1, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(1, undefined);
       expect(mockClient.release).toHaveBeenNthCalledWith(2, new PostgresError(err, err));
       expect(mockClient.release).toHaveBeenNthCalledWith(3, new PostgresError(err, err));
 
       await sleep();
       expect(mockClient.release).toHaveBeenCalledTimes(4);
-      expect(mockClient.release).toHaveBeenNthCalledWith(4, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(4);
     });
 
     it('should handle and release if submittable failed with service not using transaction', async () => {
@@ -457,6 +625,11 @@ describe('Mixed Scenario', () => {
         if (typeof rest[0] === 'string' && ['BEGIN', 'COMMIT', 'ROLLBACK'].includes(rest[0])) {
           return rest[0];
         }
+
+        if (rest[0] === testQuery) {
+          return rest[0];
+        }
+
         return result;
       });
 
@@ -464,28 +637,32 @@ describe('Mixed Scenario', () => {
 
       expect(mockPool.connect).toHaveBeenCalledTimes(4);
 
-      expect(mockClient.query).toHaveBeenCalledTimes(10);
+      expect(mockClient.query).toHaveBeenCalledTimes(14);
 
       expect(Query).toHaveBeenCalledTimes(3);
       expect(Query).toHaveBeenNthCalledWith(1, queryParams[3]);
       expect(Query).toHaveBeenNthCalledWith(2, queryParams[4]);
       expect(Query).toHaveBeenNthCalledWith(3, queryParams[5]);
 
-      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(2, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[0]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(4, queryParams[1]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(5, jest.mocked(Query).mock.results[0].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(6, jest.mocked(Query).mock.results[1].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(7, queryParams[2]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[2].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(9, 'COMMIT');
-      expect(mockClient.query).toHaveBeenNthCalledWith(10, 'COMMIT');
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, jest.mocked(Query).mock.results[0].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[1].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(9, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(10, queryParams[2]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(11, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(12, jest.mocked(Query).mock.results[2].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(13, 'COMMIT');
+      expect(mockClient.query).toHaveBeenNthCalledWith(14, 'COMMIT');
 
       expect(mockClient.release).toHaveBeenCalledTimes(3);
-      expect(mockClient.release).toHaveBeenNthCalledWith(1, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(2, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(3, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(1, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(2, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(3, undefined);
 
       await sleep();
       expect(mockClient.release).toHaveBeenCalledTimes(4);
@@ -505,6 +682,9 @@ describe('Mixed Scenario', () => {
         if (typeof rest[0] === 'string' && ['BEGIN', 'COMMIT', 'ROLLBACK'].includes(rest[0])) {
           return rest[0];
         }
+        if (rest[0] === testQuery) {
+          return rest[0];
+        }
         return result;
       });
 
@@ -512,31 +692,100 @@ describe('Mixed Scenario', () => {
 
       expect(mockPool.connect).toHaveBeenCalledTimes(5);
 
-      expect(mockClient.query).toHaveBeenCalledTimes(8);
+      expect(mockClient.query).toHaveBeenCalledTimes(13);
 
       expect(Query).toHaveBeenCalledTimes(3);
       expect(Query).toHaveBeenNthCalledWith(1, queryParams[3]);
       expect(Query).toHaveBeenNthCalledWith(2, queryParams[4]);
       expect(Query).toHaveBeenNthCalledWith(3, queryParams[5]);
 
-      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(2, queryParams[0]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[1]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(4, jest.mocked(Query).mock.results[0].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(5, jest.mocked(Query).mock.results[1].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(6, queryParams[2]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(7, jest.mocked(Query).mock.results[2].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(8, 'COMMIT');
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, jest.mocked(Query).mock.results[0].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[1].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(9, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(10, queryParams[2]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(11, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(12, jest.mocked(Query).mock.results[2].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(13, 'COMMIT');
 
       expect(mockClient.release).toHaveBeenCalledTimes(3);
-      expect(mockClient.release).toHaveBeenNthCalledWith(1, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(2, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(3, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(1, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(2, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(3, undefined);
 
       await sleep();
       expect(mockClient.release).toHaveBeenCalledTimes(5);
-      expect(mockClient.release).toHaveBeenNthCalledWith(4, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(5, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(4);
+      expect(mockClient.release).toHaveBeenNthCalledWith(5);
+    });
+
+    it('should retry if instance_1_host_1 is not available', async () => {
+      mockPool.connect.mockImplementation(
+        jest
+          .fn()
+          .mockRejectedValueOnce({ code: 'ECONNREFUSED' })
+          .mockResolvedValueOnce(mockClient)
+          .mockResolvedValueOnce(mockClient)
+          .mockResolvedValueOnce(mockClient)
+          .mockResolvedValueOnce(mockClient)
+          .mockResolvedValueOnce(mockClient)
+      );
+
+      jest.mocked(mockClient.query).mockImplementation((...rest) => {
+        if (isSubmittable(rest[0])) {
+          setTimeout(() => {
+            rest[0].emit('end');
+          }, 50);
+          return rest[0];
+        }
+        if (typeof rest[0] === 'string' && ['BEGIN', 'COMMIT', 'ROLLBACK'].includes(rest[0])) {
+          return rest[0];
+        }
+        if (rest[0] === testQuery) {
+          return rest[0];
+        }
+        return result;
+      });
+
+      await expect(testService.complexQueryWithOneTransactionSpecifiedInstance()).resolves.toBe(true);
+
+      expect(mockPool.connect).toHaveBeenCalledTimes(6);
+
+      expect(mockClient.query).toHaveBeenCalledTimes(13);
+
+      expect(Query).toHaveBeenCalledTimes(3);
+      expect(Query).toHaveBeenNthCalledWith(1, queryParams[3]);
+      expect(Query).toHaveBeenNthCalledWith(2, queryParams[4]);
+      expect(Query).toHaveBeenNthCalledWith(3, queryParams[5]);
+
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, jest.mocked(Query).mock.results[0].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[1].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(9, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(10, queryParams[2]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(11, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(12, jest.mocked(Query).mock.results[2].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(13, 'COMMIT');
+
+      expect(mockClient.release).toHaveBeenCalledTimes(3);
+      expect(mockClient.release).toHaveBeenNthCalledWith(1, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(2, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(3, undefined);
+
+      await sleep();
+      expect(mockClient.release).toHaveBeenCalledTimes(5);
+      expect(mockClient.release).toHaveBeenNthCalledWith(4);
+      expect(mockClient.release).toHaveBeenNthCalledWith(5);
     });
 
     it('should handle and release if query failed with service using transaction', async () => {
@@ -552,6 +801,9 @@ describe('Mixed Scenario', () => {
           return rest[0];
         }
         if (typeof rest[0] === 'string' && ['BEGIN', 'COMMIT', 'ROLLBACK'].includes(rest[0])) {
+          return rest[0];
+        }
+        if (rest[0] === testQuery) {
           return rest[0];
         }
 
@@ -570,13 +822,14 @@ describe('Mixed Scenario', () => {
 
       expect(mockPool.connect).toHaveBeenCalledTimes(1);
 
-      expect(mockClient.query).toHaveBeenCalledTimes(3);
+      expect(mockClient.query).toHaveBeenCalledTimes(4);
 
       expect(Query).not.toHaveBeenCalled();
 
-      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(2, queryParams[0]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(3, 'ROLLBACK');
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, 'ROLLBACK');
 
       expect(mockClient.release).toHaveBeenCalledTimes(1);
       expect(mockClient.release).toHaveBeenNthCalledWith(1, new PostgresError(err, err));
@@ -597,6 +850,9 @@ describe('Mixed Scenario', () => {
         if (typeof rest[0] === 'string' && ['BEGIN', 'COMMIT', 'ROLLBACK'].includes(rest[0])) {
           return rest[0];
         }
+        if (rest[0] === testQuery) {
+          return rest[0];
+        }
 
         if (i === 2) {
           throw err;
@@ -613,28 +869,32 @@ describe('Mixed Scenario', () => {
 
       expect(mockPool.connect).toHaveBeenCalledTimes(4);
 
-      expect(mockClient.query).toHaveBeenCalledTimes(7);
+      expect(mockClient.query).toHaveBeenCalledTimes(11);
 
       expect(Query).toHaveBeenCalledTimes(2);
       expect(Query).toHaveBeenNthCalledWith(1, queryParams[3]);
       expect(Query).toHaveBeenNthCalledWith(2, queryParams[4]);
 
-      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(2, queryParams[0]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[1]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(4, jest.mocked(Query).mock.results[0].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(5, jest.mocked(Query).mock.results[1].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(6, queryParams[2]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(7, 'ROLLBACK');
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, jest.mocked(Query).mock.results[0].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[1].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(9, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(10, queryParams[2]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(11, 'ROLLBACK');
 
       expect(mockClient.release).toHaveBeenCalledTimes(3);
-      expect(mockClient.release).toHaveBeenNthCalledWith(1, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(1, undefined);
       expect(mockClient.release).toHaveBeenNthCalledWith(2, new PostgresError(err, err));
       expect(mockClient.release).toHaveBeenNthCalledWith(3, new PostgresError(err, err));
 
       await sleep();
       expect(mockClient.release).toHaveBeenCalledTimes(4);
-      expect(mockClient.release).toHaveBeenNthCalledWith(4, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(4);
     });
 
     it('should handle and release if submittable failed with service using transaction', async () => {
@@ -658,6 +918,9 @@ describe('Mixed Scenario', () => {
         if (typeof rest[0] === 'string' && ['BEGIN', 'COMMIT', 'ROLLBACK'].includes(rest[0])) {
           return rest[0];
         }
+        if (rest[0] === testQuery) {
+          return rest[0];
+        }
         return result;
       });
 
@@ -667,31 +930,36 @@ describe('Mixed Scenario', () => {
 
       expect(mockPool.connect).toHaveBeenCalledTimes(5);
 
-      expect(mockClient.query).toHaveBeenCalledTimes(8);
+      expect(mockClient.query).toHaveBeenCalledTimes(13);
 
       expect(Query).toHaveBeenCalledTimes(3);
       expect(Query).toHaveBeenNthCalledWith(1, queryParams[3]);
       expect(Query).toHaveBeenNthCalledWith(2, queryParams[4]);
       expect(Query).toHaveBeenNthCalledWith(3, queryParams[5]);
 
-      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(2, queryParams[0]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[1]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(4, jest.mocked(Query).mock.results[0].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(5, jest.mocked(Query).mock.results[1].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(6, queryParams[2]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(7, jest.mocked(Query).mock.results[2].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(8, 'ROLLBACK');
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, jest.mocked(Query).mock.results[0].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[1].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(9, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(10, queryParams[2]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(11, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(12, jest.mocked(Query).mock.results[2].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(13, 'ROLLBACK');
 
       expect(mockClient.release).toHaveBeenCalledTimes(3);
-      expect(mockClient.release).toHaveBeenNthCalledWith(1, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(2, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(1, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(2, undefined);
       expect(mockClient.release).toHaveBeenNthCalledWith(3, new PostgresError(err, err));
 
       await sleep();
       expect(mockClient.release).toHaveBeenCalledTimes(5);
-      expect(mockClient.release).toHaveBeenNthCalledWith(4, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(5, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(4);
+      expect(mockClient.release).toHaveBeenNthCalledWith(5);
     });
 
     it('should handle and release if submittable failed with service not using transaction', async () => {
@@ -715,6 +983,9 @@ describe('Mixed Scenario', () => {
         if (typeof rest[0] === 'string' && ['BEGIN', 'COMMIT', 'ROLLBACK'].includes(rest[0])) {
           return rest[0];
         }
+        if (rest[0] === testQuery) {
+          return rest[0];
+        }
         return result;
       });
 
@@ -722,30 +993,35 @@ describe('Mixed Scenario', () => {
 
       expect(mockPool.connect).toHaveBeenCalledTimes(5);
 
-      expect(mockClient.query).toHaveBeenCalledTimes(8);
+      expect(mockClient.query).toHaveBeenCalledTimes(13);
 
       expect(Query).toHaveBeenCalledTimes(3);
       expect(Query).toHaveBeenNthCalledWith(1, queryParams[3]);
       expect(Query).toHaveBeenNthCalledWith(2, queryParams[4]);
       expect(Query).toHaveBeenNthCalledWith(3, queryParams[5]);
 
-      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(2, queryParams[0]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[1]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(4, jest.mocked(Query).mock.results[0].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(5, jest.mocked(Query).mock.results[1].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(6, queryParams[2]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(7, jest.mocked(Query).mock.results[2].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(8, 'COMMIT');
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, jest.mocked(Query).mock.results[0].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[1].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(9, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(10, queryParams[2]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(11, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(12, jest.mocked(Query).mock.results[2].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(13, 'COMMIT');
 
       expect(mockClient.release).toHaveBeenCalledTimes(3);
-      expect(mockClient.release).toHaveBeenNthCalledWith(1, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(2, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(3, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(1, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(2, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(3, undefined);
 
       await sleep();
       expect(mockClient.release).toHaveBeenCalledTimes(5);
-      expect(mockClient.release).toHaveBeenNthCalledWith(4, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(4);
       expect(mockClient.release).toHaveBeenNthCalledWith(5, new PostgresError(err, err));
     });
   });
@@ -768,6 +1044,9 @@ describe('Mixed Scenario', () => {
         if (typeof rest[0] === 'string' && ['BEGIN', 'COMMIT', 'ROLLBACK'].includes(rest[0])) {
           return rest[0];
         }
+        if (rest[0] === testQuery) {
+          return rest[0];
+        }
         return result;
       });
 
@@ -775,32 +1054,104 @@ describe('Mixed Scenario', () => {
 
       expect(mockPool.connect).toHaveBeenCalledTimes(4);
 
-      expect(mockClient.query).toHaveBeenCalledTimes(10);
+      expect(mockClient.query).toHaveBeenCalledTimes(14);
 
       expect(Query).toHaveBeenCalledTimes(3);
       expect(Query).toHaveBeenNthCalledWith(1, queryParams[3]);
       expect(Query).toHaveBeenNthCalledWith(2, queryParams[4]);
       expect(Query).toHaveBeenNthCalledWith(3, queryParams[5]);
 
-      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
       expect(mockClient.query).toHaveBeenNthCalledWith(2, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[0]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(4, queryParams[1]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(5, jest.mocked(Query).mock.results[0].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(6, jest.mocked(Query).mock.results[1].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(7, queryParams[2]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[2].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(9, 'COMMIT');
-      expect(mockClient.query).toHaveBeenNthCalledWith(10, 'COMMIT');
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[0].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(9, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(10, jest.mocked(Query).mock.results[1].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(11, queryParams[2]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(12, jest.mocked(Query).mock.results[2].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(13, 'COMMIT');
+      expect(mockClient.query).toHaveBeenNthCalledWith(14, 'COMMIT');
 
       expect(mockClient.release).toHaveBeenCalledTimes(3);
-      expect(mockClient.release).toHaveBeenNthCalledWith(1, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(2, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(3, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(1, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(2, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(3, undefined);
 
       await sleep();
+      expect(mockClient.release).toHaveBeenNthCalledWith(4);
+    });
 
-      expect(mockClient.release).toHaveBeenNthCalledWith(4, true);
+    it('should retry if instance_1_host_1 is not available', async () => {
+      let i = 0;
+
+      mockPool.connect.mockImplementation(
+        jest
+          .fn()
+          .mockResolvedValueOnce(mockClient)
+          .mockRejectedValueOnce({ code: 'ECONNREFUSED' })
+          .mockResolvedValueOnce(mockClient)
+          .mockResolvedValueOnce(mockClient)
+          .mockResolvedValueOnce(mockClient)
+          .mockResolvedValueOnce(mockClient)
+      );
+
+      jest.mocked(mockClient.query).mockImplementation((...rest) => {
+        if (isSubmittable(rest[0])) {
+          setTimeout(
+            () => {
+              rest[0].emit('end');
+            },
+            i === 1 ? 100 : 50
+          );
+          i++;
+          return rest[0];
+        }
+        if (typeof rest[0] === 'string' && ['BEGIN', 'COMMIT', 'ROLLBACK'].includes(rest[0])) {
+          return rest[0];
+        }
+        if (rest[0] === testQuery) {
+          return rest[0];
+        }
+        return result;
+      });
+
+      await expect(testService.complexQueryWithMultipleTransaction()).resolves.toBe(true);
+
+      expect(mockPool.connect).toHaveBeenCalledTimes(5);
+
+      expect(mockClient.query).toHaveBeenCalledTimes(14);
+
+      expect(Query).toHaveBeenCalledTimes(3);
+      expect(Query).toHaveBeenNthCalledWith(1, queryParams[3]);
+      expect(Query).toHaveBeenNthCalledWith(2, queryParams[4]);
+      expect(Query).toHaveBeenNthCalledWith(3, queryParams[5]);
+
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[0].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(9, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(10, jest.mocked(Query).mock.results[1].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(11, queryParams[2]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(12, jest.mocked(Query).mock.results[2].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(13, 'COMMIT');
+      expect(mockClient.query).toHaveBeenNthCalledWith(14, 'COMMIT');
+
+      expect(mockClient.release).toHaveBeenCalledTimes(3);
+      expect(mockClient.release).toHaveBeenNthCalledWith(1, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(2, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(3, undefined);
+
+      await sleep();
+      expect(mockClient.release).toHaveBeenNthCalledWith(4);
     });
 
     it('should handle and release if query failed with service using transaction', async () => {
@@ -823,7 +1174,9 @@ describe('Mixed Scenario', () => {
         if (typeof rest[0] === 'string' && ['BEGIN', 'COMMIT', 'ROLLBACK'].includes(rest[0])) {
           return rest[0];
         }
-
+        if (rest[0] === testQuery) {
+          return rest[0];
+        }
         if (j === 0) {
           throw err;
         }
@@ -837,15 +1190,17 @@ describe('Mixed Scenario', () => {
 
       expect(mockPool.connect).toHaveBeenCalledTimes(2);
 
-      expect(mockClient.query).toHaveBeenCalledTimes(5);
+      expect(mockClient.query).toHaveBeenCalledTimes(7);
 
       expect(Query).not.toHaveBeenCalled();
 
-      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
       expect(mockClient.query).toHaveBeenNthCalledWith(2, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[0]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(4, 'ROLLBACK');
-      expect(mockClient.query).toHaveBeenNthCalledWith(5, 'ROLLBACK');
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, 'ROLLBACK');
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, 'ROLLBACK');
 
       expect(mockClient.release).toHaveBeenCalledTimes(2);
       expect(mockClient.release).toHaveBeenNthCalledWith(1, new PostgresError(err, err));
@@ -872,7 +1227,9 @@ describe('Mixed Scenario', () => {
         if (typeof rest[0] === 'string' && ['BEGIN', 'COMMIT', 'ROLLBACK'].includes(rest[0])) {
           return rest[0];
         }
-
+        if (rest[0] === testQuery) {
+          return rest[0];
+        }
         if (j === 1) {
           throw err;
         }
@@ -886,16 +1243,19 @@ describe('Mixed Scenario', () => {
 
       expect(mockPool.connect).toHaveBeenCalledTimes(3);
 
-      expect(mockClient.query).toHaveBeenCalledTimes(6);
+      expect(mockClient.query).toHaveBeenCalledTimes(9);
 
       expect(Query).not.toHaveBeenCalled();
 
-      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
       expect(mockClient.query).toHaveBeenNthCalledWith(2, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[0]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(4, queryParams[1]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(5, 'ROLLBACK');
-      expect(mockClient.query).toHaveBeenNthCalledWith(6, 'ROLLBACK');
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, 'ROLLBACK');
+      expect(mockClient.query).toHaveBeenNthCalledWith(9, 'ROLLBACK');
 
       expect(mockClient.release).toHaveBeenCalledTimes(3);
       expect(mockClient.release).toHaveBeenNthCalledWith(1, new PostgresError(err, err));
@@ -931,6 +1291,9 @@ describe('Mixed Scenario', () => {
         if (typeof rest[0] === 'string' && ['BEGIN', 'COMMIT', 'ROLLBACK'].includes(rest[0])) {
           return rest[0];
         }
+        if (rest[0] === testQuery) {
+          return rest[0];
+        }
         return result;
       });
 
@@ -938,32 +1301,36 @@ describe('Mixed Scenario', () => {
 
       expect(mockPool.connect).toHaveBeenCalledTimes(4);
 
-      expect(mockClient.query).toHaveBeenCalledTimes(10);
+      expect(mockClient.query).toHaveBeenCalledTimes(14);
 
       expect(Query).toHaveBeenCalledTimes(3);
       expect(Query).toHaveBeenNthCalledWith(1, queryParams[3]);
       expect(Query).toHaveBeenNthCalledWith(2, queryParams[4]);
       expect(Query).toHaveBeenNthCalledWith(3, queryParams[5]);
 
-      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
       expect(mockClient.query).toHaveBeenNthCalledWith(2, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[0]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(4, queryParams[1]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(5, jest.mocked(Query).mock.results[0].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(6, jest.mocked(Query).mock.results[1].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(7, queryParams[2]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[2].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(9, 'ROLLBACK');
-      expect(mockClient.query).toHaveBeenNthCalledWith(10, 'ROLLBACK');
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[0].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(9, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(10, jest.mocked(Query).mock.results[1].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(11, queryParams[2]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(12, jest.mocked(Query).mock.results[2].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(13, 'ROLLBACK');
+      expect(mockClient.query).toHaveBeenNthCalledWith(14, 'ROLLBACK');
 
       expect(mockClient.release).toHaveBeenCalledTimes(3);
-      expect(mockClient.release).toHaveBeenNthCalledWith(1, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(1, undefined);
       expect(mockClient.release).toHaveBeenNthCalledWith(2, new PostgresError(err, err));
       expect(mockClient.release).toHaveBeenNthCalledWith(3, new PostgresError(err, err));
 
       await sleep();
       expect(mockClient.release).toHaveBeenCalledTimes(4);
-      expect(mockClient.release).toHaveBeenNthCalledWith(4, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(4);
     });
 
     it('should handle and release if submittable failed with service not using transaction', async () => {
@@ -997,28 +1364,32 @@ describe('Mixed Scenario', () => {
 
       expect(mockPool.connect).toHaveBeenCalledTimes(4);
 
-      expect(mockClient.query).toHaveBeenCalledTimes(10);
+      expect(mockClient.query).toHaveBeenCalledTimes(14);
 
       expect(Query).toHaveBeenCalledTimes(3);
       expect(Query).toHaveBeenNthCalledWith(1, queryParams[3]);
       expect(Query).toHaveBeenNthCalledWith(2, queryParams[4]);
       expect(Query).toHaveBeenNthCalledWith(3, queryParams[5]);
 
-      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, testQuery);
       expect(mockClient.query).toHaveBeenNthCalledWith(2, 'BEGIN');
-      expect(mockClient.query).toHaveBeenNthCalledWith(3, queryParams[0]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(4, queryParams[1]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(5, jest.mocked(Query).mock.results[0].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(6, jest.mocked(Query).mock.results[1].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(7, queryParams[2]);
-      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[2].value);
-      expect(mockClient.query).toHaveBeenNthCalledWith(9, 'COMMIT');
-      expect(mockClient.query).toHaveBeenNthCalledWith(10, 'COMMIT');
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, 'BEGIN');
+      expect(mockClient.query).toHaveBeenNthCalledWith(5, queryParams[0]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(6, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(7, queryParams[1]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(8, jest.mocked(Query).mock.results[0].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(9, testQuery);
+      expect(mockClient.query).toHaveBeenNthCalledWith(10, jest.mocked(Query).mock.results[1].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(11, queryParams[2]);
+      expect(mockClient.query).toHaveBeenNthCalledWith(12, jest.mocked(Query).mock.results[2].value);
+      expect(mockClient.query).toHaveBeenNthCalledWith(13, 'COMMIT');
+      expect(mockClient.query).toHaveBeenNthCalledWith(14, 'COMMIT');
 
       expect(mockClient.release).toHaveBeenCalledTimes(3);
-      expect(mockClient.release).toHaveBeenNthCalledWith(1, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(2, true);
-      expect(mockClient.release).toHaveBeenNthCalledWith(3, true);
+      expect(mockClient.release).toHaveBeenNthCalledWith(1, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(2, undefined);
+      expect(mockClient.release).toHaveBeenNthCalledWith(3, undefined);
 
       await sleep();
       expect(mockClient.release).toHaveBeenCalledTimes(4);

@@ -81,7 +81,7 @@ export const createTransaction = <T extends string>(Postgres: Postgres) => {
           }
         };
 
-        const releaseClients = async (err?: any) => runWithClients((client) => client.release(err ?? true));
+        const releaseClients = async (err?: any) => runWithClients((client) => client.release(err));
 
         // Ensure all clients are available.
         const [_, initErr] = await plainPromise(initClients());

@@ -224,7 +224,7 @@ describe('Utility Functions', () => {
     let debug: ReturnType<typeof utils.debugFactroy>;
 
     beforeEach(() => {
-      debug = utils.debugFactroy('test-instance', 'test-query-id', mockLogger);
+      debug = utils.debugFactroy('test-instance', 'test-query-id', 'test-host', mockLogger);
     });
 
     it('should return debug functions', () => {
@@ -239,7 +239,7 @@ describe('Utility Functions', () => {
     describe('debug pool.connect', () => {
       it('should log when a new client is requested and successfully returned', async () => {
         const callback = jest.fn(async () => ({ id: 'client-id' }) as unknown as PoolClient);
-        const debug = utils.debugFactroy('test-instance', 'test-query-id', mockLogger);
+        const debug = utils.debugFactroy('test-instance', 'test-query-id', 'test-host', mockLogger);
 
         const client = await debug.pool.connect(callback)();
         expect(client).toBeDefined();
@@ -248,6 +248,7 @@ describe('Utility Functions', () => {
         expect(mockLogger).toHaveBeenCalledWith(
           expect.objectContaining({
             Instance: 'test-instance',
+            Host: 'test-host',
             Client: 'test-query-id',
             Type: 'Request new client',
             Status: 'Successful',
@@ -262,7 +263,7 @@ describe('Utility Functions', () => {
         const callback = jest.fn(async () => {
           throw error;
         });
-        const debug = utils.debugFactroy('test-instance', 'test-query-id', mockLogger);
+        const debug = utils.debugFactroy('test-instance', 'test-query-id', 'test-host', mockLogger);
 
         await expect(debug.pool.connect(callback)()).rejects.toThrow(error);
 
@@ -270,12 +271,40 @@ describe('Utility Functions', () => {
         expect(mockLogger).toHaveBeenCalledWith(
           expect.objectContaining({
             Instance: 'test-instance',
+            Host: 'test-host',
             Client: 'test-query-id',
             Type: 'Request new client',
             Status: 'Failed',
             'Started On': jest.mocked(spyGetCurrentDateStr).mock.results[0].value,
             'Ended On': jest.mocked(spyGetCurrentDateStr).mock.results[1].value,
             Error: error
+          })
+        );
+      });
+
+      it('should print error code if have', async () => {
+        const error = new Error('Client error');
+        //@ts-ignore
+        error.code = 'error-code';
+        const callback = jest.fn(async () => {
+          throw error;
+        });
+        const debug = utils.debugFactroy('test-instance', 'test-query-id', 'test-host', mockLogger);
+
+        await expect(debug.pool.connect(callback)()).rejects.toThrow(error);
+
+        expect(spyGetCurrentDateStr).toHaveBeenCalledTimes(2);
+        expect(mockLogger).toHaveBeenCalledWith(
+          expect.objectContaining({
+            Instance: 'test-instance',
+            Host: 'test-host',
+            Client: 'test-query-id',
+            Type: 'Request new client',
+            Status: 'Failed',
+            'Started On': jest.mocked(spyGetCurrentDateStr).mock.results[0].value,
+            'Ended On': jest.mocked(spyGetCurrentDateStr).mock.results[1].value,
+            //@ts-ignore
+            Error: `[${error.code}]${error}`
           })
         );
       });
@@ -307,6 +336,7 @@ describe('Utility Functions', () => {
         expect(mockLogger).toHaveBeenCalledWith(
           expect.objectContaining({
             Instance: 'test-instance',
+            Host: 'test-host',
             Client: 'test-query-id',
             Type: 'Query',
             Text: jest.mocked(spyExtraceQueryTextAndValues).mock.results[0].value[0],
@@ -340,6 +370,7 @@ describe('Utility Functions', () => {
         expect(mockLogger).toHaveBeenCalledWith(
           expect.objectContaining({
             Instance: 'test-instance',
+            Host: 'test-host',
             Client: 'test-query-id',
             Type: 'Query',
             Text: jest.mocked(spyExtraceQueryTextAndValues).mock.results[0].value[0],
@@ -348,6 +379,44 @@ describe('Utility Functions', () => {
             'Started On': jest.mocked(spyGetCurrentDateStr).mock.results[0].value,
             'Ended On': jest.mocked(spyGetCurrentDateStr).mock.results[1].value,
             Error: error
+          })
+        );
+      });
+
+      it('should log a failed query', async () => {
+        const error = new Error('Query error');
+        //@ts-ignore
+        error.code = 'error-code';
+        const callback = jest.fn(async (..._rest: any[]) => {
+          throw error;
+        });
+
+        await expect(debug.client.query(callback)(...input)).rejects.toThrow(error);
+
+        expect(spyExtraceQueryTextAndValues).toHaveBeenCalledTimes(1);
+        expect(spyExtraceQueryTextAndValues).toHaveBeenCalledWith(...input);
+
+        expect(spyIsSubmittable).toHaveBeenCalledTimes(2);
+        expect(spyIsSubmittable).toHaveBeenNthCalledWith(2, input[0]);
+
+        expect(spyGetCurrentDateStr).toHaveBeenCalledTimes(2);
+
+        expect(spyFormatArray).toHaveBeenCalledTimes(1);
+        expect(spyFormatArray).toHaveBeenCalledWith(jest.mocked(spyExtraceQueryTextAndValues).mock.results[0].value[1]);
+
+        expect(mockLogger).toHaveBeenCalledWith(
+          expect.objectContaining({
+            Instance: 'test-instance',
+            Host: 'test-host',
+            Client: 'test-query-id',
+            Type: 'Query',
+            Text: jest.mocked(spyExtraceQueryTextAndValues).mock.results[0].value[0],
+            Values: jest.mocked(spyFormatArray).mock.results[0].value,
+            Status: 'Failed',
+            'Started On': jest.mocked(spyGetCurrentDateStr).mock.results[0].value,
+            'Ended On': jest.mocked(spyGetCurrentDateStr).mock.results[1].value,
+            //@ts-ignore
+            Error: `[${error.code}]${error}`
           })
         );
       });
@@ -362,7 +431,7 @@ describe('Utility Functions', () => {
         mockEmitter.values = input[1];
 
         const callback = jest.fn(async (..._rest: any[]) => 'submittable result');
-        const debug = utils.debugFactroy('test-instance', 'test-query-id', mockLogger);
+        const debug = utils.debugFactroy('test-instance', 'test-query-id', 'test-host', mockLogger);
 
         const query = debug.client.query(callback)(mockEmitter);
 
@@ -382,6 +451,7 @@ describe('Utility Functions', () => {
         expect(mockLogger).toHaveBeenCalledWith(
           expect.objectContaining({
             Instance: 'test-instance',
+            Host: 'test-host',
             Client: 'test-query-id',
             Type: 'Submittable',
             Text: jest.mocked(spyExtraceQueryTextAndValues).mock.results[0].value[0],
@@ -403,7 +473,7 @@ describe('Utility Functions', () => {
         mockEmitter.values = input[1];
 
         const callback = jest.fn(async (..._rest: any[]) => 'submittable result');
-        const debug = utils.debugFactroy('test-instance', 'test-query-id', mockLogger);
+        const debug = utils.debugFactroy('test-instance', 'test-query-id', 'test-host', mockLogger);
 
         const query = debug.client.query(callback)(mockEmitter);
 
@@ -424,6 +494,7 @@ describe('Utility Functions', () => {
         expect(mockLogger).toHaveBeenCalledWith(
           expect.objectContaining({
             Instance: 'test-instance',
+            Host: 'test-host',
             Client: 'test-query-id',
             Type: 'Submittable',
             Text: jest.mocked(spyExtraceQueryTextAndValues).mock.results[0].value[0],
@@ -435,12 +506,59 @@ describe('Utility Functions', () => {
           })
         );
       });
+
+      it('should print submittable with error code if have', () => {
+        const mockEmitter = new EventEmitter();
+        // @ts-ignore
+        mockEmitter.submit = () => {};
+        // @ts-ignore
+        mockEmitter.text = input[0];
+        // @ts-ignore
+        mockEmitter.values = input[1];
+
+        const callback = jest.fn(async (..._rest: any[]) => 'submittable result');
+        const debug = utils.debugFactroy('test-instance', 'test-query-id', 'test-host', mockLogger);
+
+        const query = debug.client.query(callback)(mockEmitter);
+
+        expect(spyExtraceQueryTextAndValues).toHaveBeenCalledTimes(1);
+        expect(spyExtraceQueryTextAndValues).toHaveBeenCalledWith(mockEmitter);
+
+        expect(spyIsSubmittable).toHaveBeenCalledTimes(2);
+        expect(spyIsSubmittable).toHaveBeenNthCalledWith(2, mockEmitter);
+
+        const error = new Error('Submittable error');
+        //@ts-ignore
+        error.code = 'error-code';
+        mockEmitter.emit('error', error);
+
+        expect(spyFormatArray).toHaveBeenCalledTimes(1);
+        expect(spyFormatArray).toHaveBeenCalledWith(jest.mocked(spyExtraceQueryTextAndValues).mock.results[0].value[1]);
+
+        expect(spyGetCurrentDateStr).toHaveBeenCalledTimes(2);
+
+        expect(mockLogger).toHaveBeenCalledWith(
+          expect.objectContaining({
+            Instance: 'test-instance',
+            Host: 'test-host',
+            Client: 'test-query-id',
+            Type: 'Submittable',
+            Text: jest.mocked(spyExtraceQueryTextAndValues).mock.results[0].value[0],
+            Values: jest.mocked(spyFormatArray).mock.results[0].value,
+            Status: 'Failed',
+            'Started On': jest.mocked(spyGetCurrentDateStr).mock.results[0].value,
+            'Ended On': jest.mocked(spyGetCurrentDateStr).mock.results[1].value,
+            //@ts-ignore
+            Error: `[${error.code}]${error}`
+          })
+        );
+      });
     });
 
     describe('debug client.release', () => {
       it('should log when a client is released', () => {
         const callback = jest.fn(() => {});
-        const debug = utils.debugFactroy('test-instance', 'test-query-id', mockLogger);
+        const debug = utils.debugFactroy('test-instance', 'test-query-id', 'test-host', mockLogger);
 
         debug.client.release(callback)();
 
@@ -448,6 +566,7 @@ describe('Utility Functions', () => {
         expect(mockLogger).toHaveBeenCalledWith(
           expect.objectContaining({
             Instance: 'test-instance',
+            Host: 'test-host',
             Client: 'test-query-id',
             Type: 'Release client',
             Status: 'Successful',
@@ -462,7 +581,7 @@ describe('Utility Functions', () => {
         const callback = jest.fn(() => {
           throw error;
         });
-        const debug = utils.debugFactroy('test-instance', 'test-query-id', mockLogger);
+        const debug = utils.debugFactroy('test-instance', 'test-query-id', 'test-host', mockLogger);
 
         expect(() => debug.client.release(callback)()).toThrow(error);
 
@@ -470,12 +589,40 @@ describe('Utility Functions', () => {
         expect(mockLogger).toHaveBeenCalledWith(
           expect.objectContaining({
             Instance: 'test-instance',
+            Host: 'test-host',
             Client: 'test-query-id',
             Type: 'Release client',
             Status: 'Failed',
             'Started On': jest.mocked(spyGetCurrentDateStr).mock.results[0].value,
             'Ended On': jest.mocked(spyGetCurrentDateStr).mock.results[1].value,
             Error: error
+          })
+        );
+      });
+
+      it('should print error code if have', () => {
+        const error = new Error('Release error');
+        //@ts-ignore
+        error.code = 'error-code';
+        const callback = jest.fn(() => {
+          throw error;
+        });
+        const debug = utils.debugFactroy('test-instance', 'test-query-id', 'test-host', mockLogger);
+
+        expect(() => debug.client.release(callback)()).toThrow(error);
+
+        expect(spyGetCurrentDateStr).toHaveBeenCalledTimes(2);
+        expect(mockLogger).toHaveBeenCalledWith(
+          expect.objectContaining({
+            Instance: 'test-instance',
+            Host: 'test-host',
+            Client: 'test-query-id',
+            Type: 'Release client',
+            Status: 'Failed',
+            'Started On': jest.mocked(spyGetCurrentDateStr).mock.results[0].value,
+            'Ended On': jest.mocked(spyGetCurrentDateStr).mock.results[1].value,
+            //@ts-ignore
+            Error: `[${error.code}]${error}`
           })
         );
       });
@@ -623,6 +770,74 @@ describe('Utility Functions', () => {
       });
 
       expect(result).toBe(0);
+    });
+  });
+
+  describe('normalizeOptions', () => {
+    it('should normalize when hosts is provided', () => {
+      const options = {
+        hosts: [
+          { host: 'host1', port: 1234 },
+          { host: 'host2', port: 5678 }
+        ],
+        username: 'user'
+      };
+
+      const result = utils.normalizeOptions(options);
+
+      expect(result).toEqual([
+        { host: 'host1', port: 1234, username: 'user' },
+        { host: 'host2', port: 5678, username: 'user' }
+      ]);
+    });
+
+    it('should normalize when only host and port are provided (no hosts)', () => {
+      const options = {
+        host: 'single-host',
+        port: 9999,
+        username: 'admin'
+      };
+
+      const result = utils.normalizeOptions(options);
+
+      expect(result).toEqual([{ host: 'single-host', port: 9999, username: 'admin' }]);
+    });
+  });
+
+  describe('isFailoverRequired', () => {
+    it('should return true for known failover error codes', () => {
+      const errorCodes = [
+        'ECONNREFUSED',
+        'ETIMEDOUT',
+        'EHOSTUNREACH',
+        'ENOTFOUND',
+        'EAI_AGAIN',
+        'ECONNRESET',
+        'EPIPE',
+        '57P01',
+        '57P02',
+        '57P03',
+        '55P03',
+        '55000',
+        '54000',
+        '53300',
+        '08006',
+        'XX000'
+      ];
+
+      for (const code of errorCodes) {
+        expect(utils.isFailoverRequired({ code })).toBe(true);
+      }
+    });
+
+    it('should return false for unknown error codes', () => {
+      expect(utils.isFailoverRequired({ code: 'UNKNOWN' })).toBe(false);
+      expect(utils.isFailoverRequired({ code: '12345' })).toBe(false);
+    });
+
+    it('should return false when code is undefined', () => {
+      expect(utils.isFailoverRequired({})).toBe(false);
+      expect(utils.isFailoverRequired(undefined)).toBe(false);
     });
   });
 });

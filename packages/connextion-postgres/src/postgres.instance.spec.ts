@@ -7,7 +7,7 @@ import { uid } from 'uid';
 import { ALS, CONNEXTION_POSTGRES_DEBUG, GET_CLIENT } from './constants';
 import { PostgresError } from './errors';
 import { PostgresInstance } from './postgres.instance';
-import { createDebugLogger, debugFactroy, isSubmittable } from './utils';
+import { createDebugLogger, debugFactroy, isSubmittable, normalizeOptions } from './utils';
 
 jest.mock('@nestjs/common', () => {
   const actual = jest.requireActual('@nestjs/common');
@@ -31,7 +31,8 @@ jest.mock('./utils', () => {
     ...actual,
     createDebugLogger: jest.fn(actual.createDebugLogger),
     debugFactroy: jest.fn(actual.debugFactroy),
-    isSubmittable: jest.fn(actual.isSubmittable)
+    isSubmittable: jest.fn(actual.isSubmittable),
+    normalizeOptions: jest.fn(actual.normalizeOptions)
   };
 });
 
@@ -57,6 +58,7 @@ describe('PostgresInstance', () => {
   let mockListener2: jest.Mocked<any>;
 
   let spyDispose: jest.Spied<PostgresInstance['dispose']>;
+  let spyCreatePool: jest.Spied<PostgresInstance['createPool']>;
   let spyEnd: jest.SpyInstance<PostgresInstance['end']>;
 
   beforeEach(() => {
@@ -85,6 +87,7 @@ describe('PostgresInstance', () => {
     jest.mocked(Pool).mockImplementation(() => mockPool);
 
     spyDispose = jest.spyOn(PostgresInstance.prototype, 'dispose');
+    spyCreatePool = jest.spyOn(PostgresInstance.prototype, 'createPool');
     spyEnd = jest.spyOn(PostgresInstance.prototype as any, 'end');
 
     instance = new PostgresInstance('testInstance');
@@ -134,52 +137,90 @@ describe('PostgresInstance', () => {
     });
   });
 
-  describe('create', () => {
-    it('should call dispose() and create a new pool on create()', () => {
-      expect((instance as any).pool).toBeUndefined();
-
+  describe('createPool', () => {
+    it('should create new Pool', () => {
       const options = {};
-      instance.create(options);
+      const pool = (instance as any).createPool(options);
 
-      expect(spyDispose).toHaveBeenCalled();
       expect(Pool).toHaveBeenCalledWith(options);
-      expect(mockPool.on).toHaveBeenCalledWith('connect', mockListener1);
-      expect(mockPool.on).toHaveBeenCalledWith('error', mockListener2);
-      expect((instance as any).pool).toBe(mockPool);
+      expect(mockPool.on).toHaveBeenCalledWith('connect', (instance as any).listener1);
+      expect(mockPool.on).toHaveBeenCalledWith('error', (instance as any).listener2);
     });
 
-    it('should log error if create fails', async () => {
+    it('should print error when failed', () => {
+      const error = new Error('error');
+      jest.mocked(Pool).mockImplementation(() => {
+        throw error;
+      });
+
+      const options = {};
+      (instance as any).createPool(options);
+
+      expect(mockLogger.error).toHaveBeenCalledWith(error.message);
+    });
+  });
+
+  describe('create', () => {
+    it('should create pools', async () => {
+      expect(Array.isArray((instance as any).pools)).toBe(true);
+      expect((instance as any).pools).toEqual([]);
+
+      const options = {};
+      await instance.create(options);
+
+      expect(spyDispose).toHaveBeenCalled();
+      expect(normalizeOptions).toHaveBeenCalledWith(options);
+
+      expect((instance as any).optionsArray).toBe(jest.mocked(normalizeOptions).mock.results[0].value);
+
+      (instance as any).optionsArray.forEach((ele) => {
+        expect(spyCreatePool).toHaveBeenCalledWith(ele);
+      });
+
+      expect((instance as any).pools).toEqual(
+        jest
+          .mocked(spyCreatePool)
+          .mock.results.map((ele) => ele.value)
+          .filter(Boolean)
+      );
+    });
+
+    it('should throw error if empty options', async () => {
       jest.clearAllMocks();
       jest.resetModules();
 
-      jest.mocked(Pool).mockImplementation(() => {
-        throw new Error('Create failed');
-      });
-      const options = {};
-      instance.create(options);
+      const options = { hosts: [] };
 
-      expect(mockLogger.error).toHaveBeenCalledWith('Create failed');
+      await expect(() => instance.create(options)).rejects.toThrow('cannot find available options');
     });
   });
 
   describe('dispose', () => {
-    it('should dispose the existing pool', async () => {
-      instance.create({});
-      const pool = (instance as any).pool;
-      expect(pool).toBe(mockPool);
+    it('should dispose the existing pools', async () => {
+      await instance.create({});
+      const pools = (instance as any).pools;
+      expect(pools).toEqual([mockPool]);
 
       await instance.dispose();
-      expect((instance as any).pool).toBeUndefined();
-      expect(spyEnd).toHaveBeenCalledWith(pool);
+      expect((instance as any).pools).toEqual([]);
+      expect(spyEnd).toHaveBeenCalledWith(mockPool);
 
-      expect(pool.end).toHaveBeenCalled();
-      expect(pool.off).toHaveBeenCalledWith('connect', mockListener1);
-      expect(pool.off).toHaveBeenCalledWith('error', mockListener2);
+      expect(mockPool.end).toHaveBeenCalled();
+      expect(mockPool.off).toHaveBeenCalledWith('connect', mockListener1);
+      expect(mockPool.off).toHaveBeenCalledWith('error', mockListener2);
     });
 
-    it('should skip dispose if pool is undefined', async () => {
-      const pool = (instance as any).pool;
-      expect(pool).toBeUndefined();
+    it('should skip dispose if pools is empty', async () => {
+      const pools = (instance as any).pools;
+      expect(pools).toEqual([]);
+
+      await instance.dispose();
+
+      expect(spyEnd).not.toHaveBeenCalled();
+    });
+
+    it('should skip dispose if pools is undefined', async () => {
+      (instance as any).pools = undefined;
 
       await instance.dispose();
 
@@ -214,27 +255,120 @@ describe('PostgresInstance', () => {
     });
   });
 
-  describe('get client', () => {
-    it('should throw an error if pool is not created', async () => {
-      expect((instance as any).pool).toBeUndefined();
-      await expect(instance[GET_CLIENT]()).rejects.toThrow(new PostgresError('pool not found'));
+  describe('getAndTestClient', () => {
+    it('should get client and test', async () => {
+      // @ts-ignore
+      mockClient.query.mockResolvedValue([{}]);
+
+      const client = await (instance as any).getAndTestClient(Promise.resolve(mockClient));
+
+      expect(client).toBeTruthy();
+      expect(mockClient.query).toHaveBeenCalledWith('SELECT 1;');
     });
 
-    it('should get a client from the pool', async () => {
+    it('should throw error and release client when query failed', async () => {
+      const err = new Error('error');
+      // @ts-ignore
+      mockClient.query.mockRejectedValue(err);
+
+      await expect(() => (instance as any).getAndTestClient(Promise.resolve(mockClient))).rejects.toThrow(err);
+      expect(mockClient.release).toHaveBeenCalled();
+    });
+
+    it('should throw error when failed', async () => {
+      const err = new Error('error');
+      // @ts-ignore
+      mockClient.query.mockRejectedValue(err);
+
+      await expect(() => (instance as any).getAndTestClient(Promise.reject(err))).rejects.toThrow(err);
+      expect(mockClient.release).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('get client', () => {
+    it('should get a client from the pools', async () => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue(mockClient);
 
-      instance.create({});
+      await instance.create({});
       const client = await instance[GET_CLIENT]();
       expect(mockPool.connect).toHaveBeenCalled();
+      expect(mockClient.query).toHaveBeenCalledWith('SELECT 1;');
       expect(client).toEqual(mockClient);
+    });
+
+    it('should get the first available client from the pools', async () => {
+      const err = new Error('error');
+      // @ts-ignore
+      err.code = 'ECONNREFUSED';
+
+      mockPool.connect
+        // @ts-ignore
+        .mockRejectedValueOnce(err)
+        // @ts-ignore
+        .mockResolvedValueOnce(mockClient);
+
+      await instance.create({
+        hosts: [
+          { host: 'host1', port: 1 },
+          { host: 'host2', port: 2 }
+        ]
+      });
+
+      const client = await instance[GET_CLIENT]();
+      expect(mockPool.connect).toHaveBeenCalledTimes(2);
+      expect(mockClient.query).toHaveBeenCalledWith('SELECT 1;');
+      expect(mockClient.query).toHaveBeenCalledTimes(1);
+      expect(client).toEqual(mockClient);
+    });
+
+    it('should not loop pools if error is not target error', async () => {
+      const err = new Error('error');
+
+      mockPool.connect
+        // @ts-ignore
+        .mockRejectedValueOnce(err)
+        // @ts-ignore
+        .mockResolvedValueOnce(mockClient);
+
+      await instance.create({
+        hosts: [
+          { host: 'host1', port: 1 },
+          { host: 'host2', port: 2 }
+        ]
+      });
+
+      await expect(() => instance[GET_CLIENT]()).rejects.toThrow(new PostgresError(err, err));
+
+      expect(mockPool.connect).toHaveBeenCalledTimes(1);
+      expect(mockClient.query).not.toHaveBeenCalled();
+    });
+
+    it('should throw error if no available client', async () => {
+      const err = new Error('error');
+      // @ts-ignore
+      err.code = 'ECONNREFUSED';
+      mockPool.connect
+        // @ts-ignore
+        .mockRejectedValue(err);
+
+      instance.create({
+        hosts: [
+          { host: 'host1', port: 1 },
+          { host: 'host2', port: 2 }
+        ]
+      });
+      await expect(() => instance[GET_CLIENT]()).rejects.toThrow('failed to get client');
+
+      expect(mockPool.connect).not.toHaveBeenCalled();
+      expect(mockClient.query).not.toHaveBeenCalled();
     });
 
     it('should throw an error if client is undefined', async () => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue('');
 
-      instance.create({});
+      await instance.create({});
       await expect(instance[GET_CLIENT]()).rejects.toThrow(new PostgresError('client not found'));
     });
 
@@ -243,7 +377,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockPool.connect.mockRejectedValue(err);
 
-      instance.create({});
+      await instance.create({});
       await expect(instance[GET_CLIENT]()).rejects.toThrow(new PostgresError(err, err));
     });
   });
@@ -330,12 +464,12 @@ describe('PostgresInstance', () => {
   });
 
   describe('queryWithConfig', () => {
-    const query = 'SELECT 1';
+    const query = 'SELECT 2';
 
-    beforeEach(() => {
+    beforeEach(async () => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue(mockClient);
-      instance.create({});
+      await instance.create({});
     });
 
     it('should correctly return and release the client', async () => {
@@ -346,13 +480,13 @@ describe('PostgresInstance', () => {
 
       expect(mockPool.connect).toHaveBeenCalled();
       expect(mockClient.query).toHaveBeenCalledWith(query);
-      expect(mockClient.release).toHaveBeenCalledWith(true);
+      expect(mockClient.release).toHaveBeenCalledWith(undefined);
     });
 
     it('should correctly handle query errors', async () => {
       const err = new Error('Query error');
       // @ts-ignore
-      mockClient.query.mockRejectedValue(err);
+      mockClient.query.mockResolvedValueOnce([1]).mockRejectedValue(err);
 
       await expect((instance as any).queryWithConfig(query)).rejects.toThrow(new PostgresError(err, err));
 
@@ -407,15 +541,15 @@ describe('PostgresInstance', () => {
     // @ts-ignore
     query.text = 'select 1=1;';
 
-    beforeEach(() => {
+    beforeEach(async () => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue(mockClient);
-      instance.create({});
+      await instance.create({});
     });
 
     it('should correctly return and release the client', async () => {
       // @ts-ignore
-      mockClient.query.mockResolvedValue(query);
+      mockClient.query.mockResolvedValueOnce([1]).mockResolvedValue(query);
       await expect((instance as any).queryWithSubmittable(query)).resolves.toBe(query);
 
       expect(mockPool.connect).toHaveBeenCalled();
@@ -428,13 +562,13 @@ describe('PostgresInstance', () => {
 
       expect(spyOff).toHaveBeenNthCalledWith(1, 'error', expect.any(Function));
 
-      expect(mockClient.release).toHaveBeenCalledWith(true);
+      expect(mockClient.release).toHaveBeenCalledWith();
     });
 
     it('should correctly handle query errors', async () => {
       const err = new Error('Query error');
       // @ts-ignore
-      mockClient.query.mockRejectedValue(err);
+      mockClient.query.mockResolvedValueOnce([1]).mockRejectedValue(err);
 
       await expect((instance as any).queryWithSubmittable(query)).rejects.toThrow(new PostgresError(err, err));
 
@@ -471,7 +605,7 @@ describe('PostgresInstance', () => {
 
       expect(spyOnce).not.toHaveBeenCalled();
 
-      expect(mockClient.release).toHaveBeenCalledWith(true);
+      expect(mockClient.release).toHaveBeenCalledWith(undefined);
     });
 
     describe('with ALS', () => {
@@ -565,31 +699,60 @@ describe('PostgresInstance', () => {
   });
 
   describe('debug mode', () => {
-    beforeEach(() => {
-      (instance as any).debug = true;
-    });
-
-    it('should enable debug mode if process.env.CONNEXTION_POSTGRES_DEBUG is true', () => {
+    it('should enable debug mode if process.env.CONNEXTION_POSTGRES_DEBUG is true', async () => {
       process.env[CONNEXTION_POSTGRES_DEBUG] = '1';
 
-      expect(new PostgresInstance('test-name', {})['debug']).toBeTruthy();
+      // @ts-ignore
+      mockPool.connect.mockResolvedValue(mockClient);
+
+      const instance = new PostgresInstance('test-name', {});
+      (instance as any).logger = mockLogger;
+
+      await instance.create({});
+      await instance[GET_CLIENT]();
+
+      expect(createDebugLogger).toHaveBeenCalledTimes(1);
+      expect(debugFactroy).toHaveBeenCalledTimes(1);
 
       delete process.env[CONNEXTION_POSTGRES_DEBUG];
     });
 
-    it('should enable debug mode if debug option is true', () => {
-      expect(new PostgresInstance('test-name', { debug: true })['debug']).toBeTruthy();
+    it('should enable debug mode if debug option is true', async () => {
+      // @ts-ignore
+      mockPool.connect.mockResolvedValue(mockClient);
+
+      const instance = new PostgresInstance('test-name', {});
+      (instance as any).logger = mockLogger;
+
+      await instance.create({ debug: true });
+      await instance[GET_CLIENT]();
+
+      expect(createDebugLogger).toHaveBeenCalledTimes(1);
+      expect(debugFactroy).toHaveBeenCalledTimes(1);
     });
 
-    it('should not enable debug mode by default', () => {
-      expect(new PostgresInstance('test-name', { debug: false })['debug']).toBeFalsy();
+    it('should not enable debug mode by default', async () => {
+      // @ts-ignore
+      mockPool.connect.mockResolvedValue(mockClient);
+
+      const instance = new PostgresInstance('test-name', {});
+      (instance as any).logger = mockLogger;
+
+      await instance.create({});
+      await instance[GET_CLIENT]();
+
+      expect(createDebugLogger).not.toHaveBeenCalledTimes(1);
+      expect(debugFactroy).not.toHaveBeenCalledTimes(1);
     });
 
     it('should return a proxy in debug mode', async () => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue(mockClient);
 
-      instance.create({});
+      const instance = new PostgresInstance('test-name', {});
+      (instance as any).logger = mockLogger;
+
+      await instance.create({ debug: true });
       const client = await instance[GET_CLIENT]();
 
       expect(client).not.toBe(mockClient);
@@ -599,14 +762,15 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue(mockClient);
 
-      instance.create({});
+      await instance.create({ debug: true, host: 'test-host', port: 1010 });
       const client = await instance[GET_CLIENT]();
 
-      expect(createDebugLogger).toHaveBeenCalledWith(expect.any(Function), (instance as any).debug);
+      expect(createDebugLogger).toHaveBeenCalledWith(expect.any(Function), true);
       expect(uid).toHaveBeenCalledWith(21);
       expect(debugFactroy).toHaveBeenCalledWith(
         (instance as any).name,
         jest.mocked(uid).mock.results[0].value,
+        'test-host:1010',
         jest.mocked(createDebugLogger).mock.results[0].value
       );
     });
@@ -615,7 +779,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue('');
 
-      instance.create({});
+      await instance.create({ debug: true, host: 'test-host', port: 1010 });
       await expect(instance[GET_CLIENT]()).rejects.toThrow(new PostgresError('client not found'));
     });
 
@@ -624,7 +788,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockPool.connect.mockRejectedValue(err);
 
-      instance.create({});
+      await instance.create({ debug: true, host: 'test-host', port: 1010 });
       await expect(instance[GET_CLIENT]()).rejects.toThrow(new PostgresError(err, err));
       expect(createDebugLogger).toHaveBeenCalled();
       expect(uid).toHaveBeenCalled();
@@ -637,7 +801,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockClient.query.mockResolvedValue({ rows: [] });
 
-      instance.create({});
+      await instance.create({ debug: true, host: 'test-host', port: 1010 });
 
       const client = await instance[GET_CLIENT]();
 
@@ -650,7 +814,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockClient.query.mockResolvedValue({ rows: [] });
 
-      instance.create({});
+      await instance.create({ debug: true, host: 'test-host', port: 1010 });
 
       const client = await instance[GET_CLIENT]();
       await client.query('SELECT 1');
@@ -662,7 +826,7 @@ describe('PostgresInstance', () => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue(mockClient);
 
-      instance.create({});
+      await instance.create({ debug: true, host: 'test-host', port: 1010 });
 
       const client = await instance[GET_CLIENT]();
       client.release();
@@ -670,11 +834,11 @@ describe('PostgresInstance', () => {
       expect(mockLogger.debug).toHaveBeenCalledWith(expect.any(String));
     });
 
-    it('should not log debug information when other methods in debug mode', async () => {
+    it('should not log debug information when calling other methods', async () => {
       // @ts-ignore
       mockPool.connect.mockResolvedValue(mockClient);
 
-      instance.create({});
+      await instance.create({ debug: true, host: 'test-host', port: 1010 });
 
       const client = await instance[GET_CLIENT]();
       mockLogger.debug.mockClear();
@@ -685,17 +849,18 @@ describe('PostgresInstance', () => {
     });
 
     it('should log debug information with custom logger in debug mode', async () => {
-      (instance as any).debug = (data: any) => data;
+      const debug = jest.fn((data: any) => data);
       // @ts-ignore
       mockPool.connect.mockResolvedValue(mockClient);
       // @ts-ignore
       mockClient.query.mockResolvedValue({ rows: [] });
 
-      instance.create({});
+      await instance.create({ debug, host: 'test-host', port: 1010 });
 
       const client = await instance[GET_CLIENT]();
       await client.query('SELECT 1');
 
+      expect(debug).toHaveBeenCalled();
       expect(mockLogger.debug).toHaveBeenCalledWith(expect.objectContaining({ Type: 'Query' }));
     });
   });

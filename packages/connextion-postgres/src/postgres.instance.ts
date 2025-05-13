@@ -16,13 +16,20 @@ import {
 import { uid } from 'uid';
 import { ALS, CONNEXTION_POSTGRES_DEBUG, GET_CLIENT } from './constants';
 import { PostgresError } from './errors';
-import type { ALSQueryType, ALSType, PostgresInstanceOptions } from './types';
-import { createDebugLogger, debugFactroy, isSubmittable, plainPromise } from './utils';
+import type { ALSQueryType, ALSType, Options, PostgresInstanceOptions } from './types';
+import {
+  createDebugLogger,
+  debugFactroy,
+  isFailoverRequired,
+  isSubmittable,
+  normalizeOptions,
+  plainPromise
+} from './utils';
 
 export class PostgresInstance extends ConnextionInstance<PostgresInstanceOptions> {
-  private pool: Pool | undefined = undefined;
+  private pools: Pool[] = [];
   private logger: Logger;
-  private debug: PostgresInstanceOptions['debug'];
+  private optionsArray: ReturnType<typeof normalizeOptions> = [];
 
   // Every instance should have its own als to avoid accessing wrong context.
   public [ALS] = new AsyncLocalStorage<ALSType>();
@@ -37,11 +44,10 @@ export class PostgresInstance extends ConnextionInstance<PostgresInstanceOptions
   constructor(name: string, options?: PostgresInstanceOptions) {
     super(name, options);
     this.logger = new Logger(`Postgres][${name}`);
-    this.debug = Boolean(process.env[CONNEXTION_POSTGRES_DEBUG]) || options?.debug;
   }
 
   private async end(pool?: Pool) {
-    if (!pool) {
+    if (!pool || pool.ending) {
       return;
     }
 
@@ -54,69 +60,114 @@ export class PostgresInstance extends ConnextionInstance<PostgresInstanceOptions
     }
   }
 
-  dispose() {
-    if (!this.pool) {
+  async dispose() {
+    if (!this.pools) {
       return;
     }
-    const pool = this.pool;
-    this.pool = undefined;
+    const pools = this.pools;
+    this.pools = [];
 
-    return this.end(pool);
+    for (const pool of pools) {
+      await this.end(pool);
+    }
+
+    return;
   }
 
-  create(options: PostgresInstanceOptions) {
-    this.dispose();
-
+  createPool(options: Options) {
     try {
       const pool = new Pool(options);
-
       //https://github.com/brianc/node-postgres/issues/2439#issuecomment-757691278
       pool.on('connect', this.listener1);
       pool.on('error', this.listener2);
 
-      this.pool = pool;
+      return pool;
     } catch (error) {
       this.logger.error(error.message);
     }
   }
 
-  public async [GET_CLIENT]() {
-    if (!this.pool) {
-      throw new PostgresError('pool not found');
+  async create(options: PostgresInstanceOptions) {
+    await this.dispose();
+
+    this.optionsArray = normalizeOptions(options);
+
+    if (!this.optionsArray.length) {
+      throw new Error('cannot find available options');
     }
 
-    if (!this.debug) {
-      const [client, err] = await plainPromise(this.pool.connect());
-      if (err) {
-        throw new PostgresError(err, err);
-      }
-      if (!client) {
-        throw new PostgresError('client not found');
-      }
+    this.pools = this.optionsArray.map((options) => this.createPool(options)).filter(Boolean) as Pool[];
+  }
+
+  private async getAndTestClient(promise: Promise<PoolClient>) {
+    const client = await promise;
+
+    if (!client) {
       return client;
     }
 
-    // Debug mode
-    const logger = createDebugLogger(this.logger.debug.bind(this.logger), this.debug);
-    const debug = debugFactroy(this.name, uid(21), logger);
-    const [client, err] = await plainPromise(debug.pool.connect(this.pool.connect.bind(this.pool))());
-    if (err) {
-      throw new PostgresError(err, err);
+    try {
+      // test if current client is still alive.
+      await client.query('SELECT 1;');
+      return client;
+    } catch (error) {
+      client.release(error);
+      throw error;
     }
-    if (!client) {
-      throw new PostgresError('client not found');
-    }
+  }
 
-    return new Proxy(client, {
-      get(target, prop: string, receiver) {
-        const value = Reflect.get(target, prop, receiver);
-        if (debug.client[prop]) {
-          return debug.client[prop](value.bind(target));
+  public async [GET_CLIENT]() {
+    let error: any = 'failed to get client';
+
+    for (let i = 0; i < this.optionsArray.length; i++) {
+      const pool = this.pools[i];
+      const debugMode = this.optionsArray[i].debug || !!process.env[CONNEXTION_POSTGRES_DEBUG];
+
+      if (!debugMode) {
+        const [client, err] = await plainPromise(this.getAndTestClient(pool.connect()));
+
+        if (client) {
+          return client;
         }
 
-        return value;
+        error = err || 'client not found';
+
+        if (!isFailoverRequired(error)) {
+          break;
+        }
+      } else {
+        // Debug mode
+        const logger = createDebugLogger(this.logger.debug.bind(this.logger), debugMode);
+        const debug = debugFactroy(
+          this.name,
+          uid(21),
+          `${this.optionsArray[i].host}:${this.optionsArray[i].port}`,
+          logger
+        );
+        const [client, err] = await plainPromise(this.getAndTestClient(debug.pool.connect(pool.connect.bind(pool))()));
+
+        if (client) {
+          return new Proxy(client, {
+            get(target, prop: string, receiver) {
+              const value = Reflect.get(target, prop, receiver);
+              if (debug.client[prop]) {
+                return debug.client[prop](value.bind(target));
+              }
+
+              return value;
+            }
+          });
+        }
+
+        error = err || 'client not found';
+
+        if (!isFailoverRequired(error)) {
+          break;
+        }
       }
-    });
+    }
+
+    throw new PostgresError(error, typeof error === 'string' ? undefined : error);
   }
 
   async query<T extends Submittable>(queryStream: T): Promise<T>;
@@ -166,7 +217,7 @@ export class PostgresInstance extends ConnextionInstance<PostgresInstanceOptions
       err = new PostgresError(error, error);
       throw err;
     } finally {
-      client.release(err ?? true);
+      client.release(err);
     }
   }
 
@@ -218,13 +269,13 @@ export class PostgresInstance extends ConnextionInstance<PostgresInstanceOptions
 
         const onEnd = () => {
           res!.off('error', onError);
-          client.release(true);
+          client.release();
         };
 
         res.once('end', onEnd);
         res.once('error', onError);
       } else {
-        client.release(err ?? true);
+        client.release(err);
       }
     }
   }
