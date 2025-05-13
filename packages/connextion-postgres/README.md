@@ -9,6 +9,13 @@ A flexible module to provide [node-postgres](https://node-postgres.com/) interfa
 
 ---
 
+## Feature
+
+- ✅ Transaction support
+- ✅ High availability (HA) support
+- ✅ Type intelligent
+
+
 ## Install
 
 ```bash
@@ -172,6 +179,40 @@ class SampleService {
     const result = await this.postgres.instance1.query(`select 1=1;`);
   }
 }
+```
+
+### High availability (HA)
+
+Register postgres connection instance with multiple host.
+
+When enabled, `instance1` will attempt to connect db with each hosts/ports in sequence until a connection is successfully established.
+
+**Note: This is a temporary workaround and will change once `node-postgres` internally supports multiple hosts.**
+
+```typescript
+@Module({
+  imports: [
+    PostgresModule.register({
+      connections: [
+        {
+          name: 'instance1',
+          hosts: [
+            {
+              host: 'instance_1_host_1',
+              port: 1
+            },
+            {
+              host: 'instance_1_host_2',
+              port: 2
+            }
+          ]
+        }
+      ]
+    })
+  ],
+  providers: [SampleService]
+})
+export class SampleModule {} 
 ```
 
 ## License
