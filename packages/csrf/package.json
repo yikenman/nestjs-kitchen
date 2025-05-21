@@ -1,0 +1,82 @@
+{
+  "name": "@nestjs-kitchen/csrf",
+  "private": false,
+  "description": "A CSRF module in NextJS.",
+  "version": "1.0.0",
+  "homepage": "https://github.com/yikenman/nestjs-kitchen",
+  "repository": "https://github.com/yikenman/nestjs-kitchen",
+  "author": "yikenman",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rimraf dist && tsc -p tsconfig.build.json",
+    "dev": "rimraf dist && tsc -p tsconfig.build.json --watch",
+    "test": "jest",
+    "test:ci": "jest --coverage && jest --config ./test/jest-e2e.config.json",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/jest/bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.config.json",
+    "test:e2e:watch": "jest --config ./test/jest-e2e.config.json --watch",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "csrf": "^3.1.0"
+  },
+  "devDependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/secure-session": "^8.2.0",
+    "@fastify/session": "^11.1.0",
+    "@nestjs/platform-express": "^10.0.0 || ^11.0.0",
+    "@nestjs/platform-fastify": "^10.0.0 || ^11.0.0",
+    "@nestjs/testing": "^11.0.0",
+    "@types/cookie-parser": "^1.4.8",
+    "@types/express-session": "^1.18.1",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.9",
+    "@types/supertest": "^6.0.2",
+    "cookie-parser": "^1.4.7",
+    "express-session": "^1.18.1",
+    "jest": "^29.7.0",
+    "rimraf": "^6.0.1",
+    "supertest": "^7.1.0",
+    "ts-jest": "^29.3.0",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.8.2"
+  },
+  "engines": {
+    "node": ">=20.13.0"
+  },
+  "keywords": [
+    "csrf",
+    "CSRF",
+    "module",
+    "NextJS",
+    "NodeJS"
+  ],
+  "optionalDependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/secure-session": "^8.2.0",
+    "@fastify/session": "^11.1.0",
+    "cookie-parser": "^1.4.7",
+    "express-session": "^1.18.1",
+    "@types/cookie-parser": "^1.4.8",
+    "@types/express-session": "^1.18.1",
+    "@nestjs/platform-express": "^10.0.0 || ^11.0.0",
+    "@nestjs/platform-fastify": "^10.0.0 || ^11.0.0"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^10.0.0 || ^11.0.0",
+    "@nestjs/core": "^10.0.0 || ^11.0.0",
+    "rxjs": "^7.8.2"
+  }
+}

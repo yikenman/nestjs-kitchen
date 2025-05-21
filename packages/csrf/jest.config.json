@@ -19,5 +19,6 @@
   "testEnvironment": "node",
   "coveragePathIgnorePatterns": [
     "index.ts"
-  ]
+  ],
+  "collectCoverage": true
 }
