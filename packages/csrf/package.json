@@ -2,7 +2,7 @@
   "name": "@nestjs-kitchen/csrf",
   "private": false,
   "description": "A CSRF module in NextJS.",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "homepage": "https://github.com/yikenman/nestjs-kitchen",
   "repository": "https://github.com/yikenman/nestjs-kitchen",
   "author": "yikenman",
