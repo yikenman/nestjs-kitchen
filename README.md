@@ -25,3 +25,4 @@ Convenient tools to serve your NextJS application.
 | ✅     | [`@nestjs-kitchen/connextion-presto`](./packages/connextion-presto/README.md) | A flexible module to provide [presto-client](https://www.npmjs.com/package/presto-client) interface in NextJS.   |
 | ✅     | [`@nestjs-kitchen/connextion-duckdb`](./packages/connextion-duckdb/README.md) | A flexible module to provide [@duckdb/node-api](https://www.npmjs.com/package/@duckdb/node-api) interface in NextJS.   |
 | ✅     | [`@nestjs-kitchen/cache-manager`](./packages/cache-manager/README.md)                | A better caching module for NestJS, fully compatible with [@nestjs/cache-manager](https://www.npmjs.com/package/@nestjs/cache-manager) v3.                    |
+| ✅     | [`@nestjs-kitchen/csrf`](./packages/csrf/README.md) | A CSRF module in NextJS.   |
