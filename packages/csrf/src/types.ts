@@ -1,6 +1,6 @@
 import type { Options } from 'csrf';
 
-export type HttpMethod = 'GET' | 'HEAD' | 'PATCH' | 'PUT' | 'POST' | 'DELETE' | 'CONNECT' | 'OPTIONS' | 'TRACE';
+export type HttpMethod = 'GET' | 'HEAD' | 'PATCH' | 'PUT' | 'POST' | 'DELETE' | 'CONNECT' | 'OPTIONS' | 'TRACE' | {};
 
 export type CsrfOptions = Options & {
   /**
@@ -26,7 +26,7 @@ export type CsrfOptions = Options & {
    * Default: ['PATCH', 'PUT', 'POST', 'DELETE', 'CONNECT', 'TRACE']
    */
   verifyMethods?: HttpMethod[];
-  verifyMethodsSet?: Set<HttpMethod>;
+  verifyMethodsSet?: Set<string>;
 };
 
 export type CsrfDoubleCsrfOptions = {
