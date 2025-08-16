@@ -1,12 +1,12 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { Inject, type Type, mixin } from '@nestjs/common';
+import { Inject, mixin, type Type } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import type { Request } from 'express';
 import { Strategy } from 'passport-custom';
 import { AuthzProviderClass } from '../authz.provider';
 import { PASSPORT_PROPERTY, SESSION_PASSPORT_KEY } from '../constants';
 import { AuthzAnonymousError, AuthzError, AuthzVerificationError } from '../errors';
-import { type OmitClassInstance, getAlsStore } from '../utils';
+import { getAlsStore, type OmitClassInstance } from '../utils';
 import type { SessionAlsType } from './session-authz-als.middleware';
 
 export const createSessionAuthzStrategy = ([SESSION_STRATEGY, AUTHZ_PROVIDER, ALS_PROVIDER]: [string, any, any]) => {

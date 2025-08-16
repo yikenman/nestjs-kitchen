@@ -55,9 +55,7 @@ export const isUndefinedOrNull = (val: any): val is undefined | null => {
   return val === undefined || val === null;
 };
 
-export const removeEmptyValue = (obj?: {
-  [key: string]: string | undefined;
-}): Record<string, string> | undefined => {
+export const removeEmptyValue = (obj?: { [key: string]: string | undefined }): Record<string, string> | undefined => {
   if (!obj) {
     return undefined;
   }

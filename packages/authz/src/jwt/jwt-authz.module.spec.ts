@@ -1,4 +1,4 @@
-import { Injectable, SetMetadata, UseGuards, applyDecorators } from '@nestjs/common';
+import { applyDecorators, Injectable, SetMetadata, UseGuards } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AsyncLocalStorage } from 'async_hooks';
 import { uid } from 'uid';
@@ -6,12 +6,12 @@ import { AuthzProviderClass } from '../authz.provider';
 import { PREFIX, ROUTES_OPTIONS } from '../constants';
 import { AuthzError } from '../errors';
 import { createAuthzDecoratorFactory, mergeDynamicModuleConfigs, normalizedArray } from '../utils';
-import { createJwtAuthzAlsMiddleware } from './jwt-authz-als.middleware';
 import { createJwtAuthzGuard, createJwtRefreshAuthzGuard } from './jwt-authz.guard';
 import { normalizedJwtAuthzModuleOptions } from './jwt-authz.interface';
 import { createJwtAuthzModule } from './jwt-authz.module';
 import { createJwtAuthzService } from './jwt-authz.service';
 import { createJwtStrategy, createRefreshStrategy } from './jwt-authz.strategy';
+import { createJwtAuthzAlsMiddleware } from './jwt-authz-als.middleware';
 
 jest.mock('@nestjs/common', () => {
   const actual = jest.requireActual('@nestjs/common');
@@ -322,11 +322,7 @@ describe('JWT Authz Module', () => {
 
           expect(() => {
             createJwtAuthzModule(TestJwtAuthzProvider).AuthzModule.register(mockJwtAuthzOptions);
-          }).toThrow(
-            new AuthzError(
-              `InternalError: Cannot initialize mutiple global modules. Only one global module is allowed.`
-            )
-          );
+          }).toThrow(`InternalError: Cannot initialize mutiple global modules. Only one global module is allowed.`);
         });
       });
     });

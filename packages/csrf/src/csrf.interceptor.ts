@@ -1,7 +1,7 @@
 import { CallHandler, ExecutionContext, Inject, Injectable, NestInterceptor, type OnModuleInit } from '@nestjs/common';
 import { HttpAdapterHost, Reflector } from '@nestjs/core';
 import type Tokens from 'csrf';
-import { type Observable, mergeMap } from 'rxjs';
+import { mergeMap, type Observable } from 'rxjs';
 import { CSRF_INSTANCE, CSRF_METADATA_SIGN, CSRF_OPTIONS } from './constants';
 import { CsrfError } from './errors';
 import type { CsrfDoubleCsrfOptions, CsrfOptions, CsrfSessionOptions } from './types';

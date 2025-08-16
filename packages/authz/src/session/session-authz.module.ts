@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import {
+  applyDecorators,
   type ConfigurableModuleAsyncOptions,
   ConfigurableModuleBuilder,
   DynamicModule,
@@ -10,8 +11,7 @@ import {
   NestModule,
   SetMetadata,
   type Type,
-  UseGuards,
-  applyDecorators
+  UseGuards
 } from '@nestjs/common';
 import type { Reflector } from '@nestjs/core';
 import { uid } from 'uid';
@@ -26,22 +26,22 @@ import {
   type AuthzModuleBaseOptions,
   type AuthzModuleRoutesOptions,
   type CookieOptionsWithSecret,
+  createAuthzDecoratorFactory,
   type DeepReadonly,
   type MethodParameters,
-  type RoutesOptions,
-  createAuthzDecoratorFactory,
   mergeDynamicModuleConfigs,
-  normalizedArray
+  normalizedArray,
+  type RoutesOptions
 } from '../utils';
-import { type SessionAlsType, createSessionAuthzAlsMiddleware } from './session-authz-als.middleware';
 import { createSessionAuthzGuard } from './session-authz.guard';
 import {
+  normalizedSessionAuthzModuleOptions,
   type SessionAuthzModuleOptions,
-  type SessionAuthzOptions,
-  normalizedSessionAuthzModuleOptions
+  type SessionAuthzOptions
 } from './session-authz.interface';
 import { createSessionAuthzService } from './session-authz.service';
 import { createSessionAuthzStrategy } from './session-authz.strategy';
+import { createSessionAuthzAlsMiddleware, type SessionAlsType } from './session-authz-als.middleware';
 
 const store: Record<any, number> = {
   globalInited: 0

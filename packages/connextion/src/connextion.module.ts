@@ -7,9 +7,9 @@ import {
   type AsyncModuleOptions,
   type ConnectionOptionName,
   type ConnectionOptions,
-  type ModuleOptions,
   createAsyncProviders,
   joinStrs,
+  type ModuleOptions,
   mixinModule,
   normalizeConnections
 } from './utils';

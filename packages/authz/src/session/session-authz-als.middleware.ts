@@ -1,9 +1,9 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { Inject, NestMiddleware, type Type, mixin } from '@nestjs/common';
+import { Inject, mixin, NestMiddleware, type Type } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 import { SESSION_PASSPORT_KEY } from '../constants';
 import { AuthzError } from '../errors';
-import { type CookieOptionsWithSecret, type OmitClassInstance, createSetCookieFn, merge } from '../utils';
+import { type CookieOptionsWithSecret, createSetCookieFn, merge, type OmitClassInstance } from '../utils';
 import type { SessionAuthzOptions } from './session-authz.interface';
 
 export interface SessionAlsType<P, U> {

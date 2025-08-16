@@ -3,8 +3,8 @@ import { mixin } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import type { NextFunction, Request, Response } from 'express';
 import { createSetCookieFn } from '../utils';
-import { JwtAlsType, createJwtAuthzAlsMiddleware } from './jwt-authz-als.middleware';
 import type { JwtAuthzOptions } from './jwt-authz.interface';
+import { createJwtAuthzAlsMiddleware, JwtAlsType } from './jwt-authz-als.middleware';
 
 jest.mock('@nestjs/common', () => {
   const actual = jest.requireActual('@nestjs/common');

@@ -1,8 +1,8 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { Inject, NestMiddleware, type Type, mixin } from '@nestjs/common';
+import { Inject, mixin, NestMiddleware, type Type } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 import { JwtValidationType } from '../constants';
-import { type CookieOptionsWithSecret, type OmitClassInstance, createSetCookieFn } from '../utils';
+import { type CookieOptionsWithSecret, createSetCookieFn, type OmitClassInstance } from '../utils';
 import type { JwtAuthzOptions } from './jwt-authz.interface';
 
 export interface JwtAlsType<U> {

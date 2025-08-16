@@ -1,5 +1,5 @@
 import type { AsyncLocalStorage } from 'node:async_hooks';
-import { CanActivate, ExecutionContext, Inject, type Type, mixin } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Inject, mixin, type Type } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request } from 'express';
@@ -8,16 +8,16 @@ import { AuthzProviderClass } from '../authz.provider';
 import { AuthzAnonymousError, type AuthzError } from '../errors';
 import {
   type AuthzMetaParams,
-  type OmitClassInstance,
   getAllowAnonymous,
   getAlsStore,
   getContextAuthzMetaParamsList,
   getPassportProperty,
   isNotFalsy,
-  normalizedArray
+  normalizedArray,
+  type OmitClassInstance
 } from '../utils';
-import type { JwtAlsType } from './jwt-authz-als.middleware';
 import type { JwtAuthzOptions } from './jwt-authz.interface';
+import type { JwtAlsType } from './jwt-authz-als.middleware';
 
 export const createJwtAuthzGuard = ([
   JWT_STRATEGY,

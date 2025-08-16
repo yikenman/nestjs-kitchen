@@ -1,6 +1,5 @@
 import { Controller, Get, Inject } from '@nestjs/common';
-import { Cache } from '../../../src';
-import { CACHE_MANAGER } from '../../../src';
+import { CACHE_MANAGER, Cache } from '../../../src';
 
 @Controller()
 export class AsyncRegisterController {

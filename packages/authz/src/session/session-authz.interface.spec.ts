@@ -1,5 +1,5 @@
 import { DEFAULT_PASSPORT_PROPERTY_VALUE } from '../constants';
-import { type SessionAuthzModuleOptions, normalizedSessionAuthzModuleOptions } from './session-authz.interface';
+import { normalizedSessionAuthzModuleOptions, type SessionAuthzModuleOptions } from './session-authz.interface';
 
 beforeEach(() => {
   jest.resetModules();

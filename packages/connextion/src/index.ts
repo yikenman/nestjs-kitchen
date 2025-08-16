@@ -1,4 +1,4 @@
-export { defineConnextionBuilder } from './connextion.module';
 export { ConnextionInstance } from './connextion.instance';
-export type { ModuleOptions, AsyncModuleOptions, ConnectionOptionName } from './utils/types.js';
+export { defineConnextionBuilder } from './connextion.module';
 export { ConnextionError } from './errors';
+export type { AsyncModuleOptions, ConnectionOptionName, ModuleOptions } from './utils/types.js';

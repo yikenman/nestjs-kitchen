@@ -1,7 +1,7 @@
-import { Server } from 'net';
 import { ExpressAdapter, type NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import session from 'express-session';
+import { Server } from 'net';
 import request from 'supertest';
 import { CsrfModule } from '../../src';
 import { AppController } from '../app.controller';

@@ -1,11 +1,11 @@
+import type { DynamicModule, Type } from '@nestjs/common';
 import {
   type AsyncModuleOptions,
   type ConnectionOptionName,
   type ConnextionInstance,
-  type ModuleOptions,
-  defineConnextionBuilder
+  defineConnextionBuilder,
+  type ModuleOptions
 } from '@nestjs-kitchen/connextion';
-import type { DynamicModule, Type } from '@nestjs/common';
 import { DEFAULT_INSTANCE_NAME } from './constants';
 import { PostgresInstance } from './postgres.instance';
 import { createTransaction } from './transaction';

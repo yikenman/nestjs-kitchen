@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { Inject, Injectable, type Type, mixin } from '@nestjs/common';
+import { Inject, Injectable, mixin, type Type } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import type { Request } from 'express';
 import jwt from 'jsonwebtoken';
@@ -7,10 +7,10 @@ import { Strategy } from 'passport-custom';
 import { AuthzProviderClass } from '../authz.provider';
 import { JwtValidationType, PASSPORT_PROPERTY } from '../constants';
 import { AuthzAnonymousError, AuthzError, AuthzVerificationError } from '../errors';
-import { type OmitClassInstance, type SetRequired, decodeMsgpackrString, getAlsStore } from '../utils';
+import { decodeMsgpackrString, getAlsStore, type OmitClassInstance, type SetRequired } from '../utils';
 import { ExtractJwt } from './extract-jwt';
-import type { JwtAlsType } from './jwt-authz-als.middleware';
 import type { JwtAuthzOptions, RefreshPayload } from './jwt-authz.interface';
+import type { JwtAlsType } from './jwt-authz-als.middleware';
 
 export const createJwtStrategy = ([JWT_STRATEGY, AUTHZ_PROVIDER, ALS_PROVIDER]: [string, any, any]) => {
   class JwtStrategy extends PassportStrategy(Strategy, JWT_STRATEGY) {

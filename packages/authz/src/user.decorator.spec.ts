@@ -1,4 +1,4 @@
-import { type ExecutionContext, createParamDecorator } from '@nestjs/common';
+import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
 import { User, userDecoratorFactory } from './user.decorator';
 import { getPassportProperty } from './utils';
 

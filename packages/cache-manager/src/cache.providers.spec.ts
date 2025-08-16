@@ -1,5 +1,5 @@
 import KeyvRedis from '@keyv/redis';
-import { KeyvAdapter, createCache } from 'cache-manager';
+import { createCache, KeyvAdapter } from 'cache-manager';
 import Keyv from 'keyv';
 import { CACHE_MANAGER, CACHE_RESULT_OPTIONS, CACHE_VERBOSE_LOG } from './cache.constants';
 import { createCacheManager } from './cache.providers';

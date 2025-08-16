@@ -1,4 +1,4 @@
-import { Injectable, SetMetadata, UseGuards, applyDecorators } from '@nestjs/common';
+import { applyDecorators, Injectable, SetMetadata, UseGuards } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AsyncLocalStorage } from 'async_hooks';
 import type { NextFunction, Request, Response } from 'express';
@@ -7,12 +7,12 @@ import { AuthzProviderClass } from '../authz.provider';
 import { PREFIX, ROUTES_OPTIONS } from '../constants';
 import { AuthzError } from '../errors';
 import { createAuthzDecoratorFactory, mergeDynamicModuleConfigs, normalizedArray } from '../utils';
-import { createSessionAuthzAlsMiddleware } from './session-authz-als.middleware';
 import { createSessionAuthzGuard } from './session-authz.guard';
 import { normalizedSessionAuthzModuleOptions } from './session-authz.interface';
 import { cereateSessionAuthzModule } from './session-authz.module';
 import { createSessionAuthzService } from './session-authz.service';
 import { createSessionAuthzStrategy } from './session-authz.strategy';
+import { createSessionAuthzAlsMiddleware } from './session-authz-als.middleware';
 
 jest.mock('@nestjs/common', () => {
   const actual = jest.requireActual('@nestjs/common');
@@ -288,11 +288,7 @@ describe('Session Authz Module', () => {
 
           expect(() => {
             cereateSessionAuthzModule(TestAuthzProvider).AuthzModule.register(mockSessionAuthzOptions);
-          }).toThrow(
-            new AuthzError(
-              `InternalError: Cannot initialize mutiple global modules. Only one global module is allowed.`
-            )
-          );
+          }).toThrow(`InternalError: Cannot initialize mutiple global modules. Only one global module is allowed.`);
         });
       });
     });

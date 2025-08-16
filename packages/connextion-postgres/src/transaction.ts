@@ -1,5 +1,5 @@
-import { defineConnextionBuilder } from '@nestjs-kitchen/connextion';
 import { Inject } from '@nestjs/common';
+import { defineConnextionBuilder } from '@nestjs-kitchen/connextion';
 import { ALS, GET_CLIENT } from './constants';
 import { PostgresError } from './errors';
 import type { PostgresInstance } from './postgres.instance';
