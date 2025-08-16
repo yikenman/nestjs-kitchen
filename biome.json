@@ -8,8 +8,12 @@
     "enabled": true,
     "useIgnoreFile": true
   },
-  "organizeImports": {
-    "enabled": true
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
   },
   "formatter": {
     "enabled": true,
@@ -76,7 +80,7 @@
   },
   "overrides": [
     {
-      "include": [
+      "includes": [
         "**/tsconfig*.json"
       ],
       "formatter": {
@@ -89,11 +93,9 @@
       }
     },
     {
-      "include": [
-        "**/*.json"
-      ],
-      "ignore": [
-        "**/tsconfig*.json"
+      "includes": [
+        "**/*.json",
+        "!**/tsconfig*.json"
       ],
       "formatter": {
         "lineWidth": 1
