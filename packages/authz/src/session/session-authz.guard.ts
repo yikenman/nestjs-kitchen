@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Inject, type Type, mixin } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Inject, mixin, type Type } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import type { AsyncLocalStorage } from 'async_hooks';
@@ -7,16 +7,16 @@ import { AuthzProviderClass } from '../authz.provider';
 import { AuthzAnonymousError, type AuthzError } from '../errors';
 import {
   type AuthzMetaParams,
-  type OmitClassInstance,
   getAllowAnonymous,
   getAlsStore,
   getContextAuthzMetaParamsList,
   getPassportProperty,
   isNotFalsy,
-  normalizedArray
+  normalizedArray,
+  type OmitClassInstance
 } from '../utils';
-import type { SessionAlsType } from './session-authz-als.middleware';
 import type { SessionAuthzOptions } from './session-authz.interface';
+import type { SessionAlsType } from './session-authz-als.middleware';
 
 export const createSessionAuthzGuard = ([
   SESSION_STRATEGY,

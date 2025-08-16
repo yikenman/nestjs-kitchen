@@ -1,4 +1,4 @@
-import { Inject, type Type, mixin } from '@nestjs/common';
+import { Inject, mixin, type Type } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import type { ConnextionInstance } from './connextion.instance';
 import { INJECT_TOKEN_ID, INSTANCE_TOKEN_MAP } from './constants';

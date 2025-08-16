@@ -8,10 +8,10 @@ import { Strategy } from 'passport-custom';
 import { AuthzProviderClass } from '../authz.provider';
 import { JwtValidationType, PASSPORT_PROPERTY } from '../constants';
 import { AuthzAnonymousError, AuthzError, AuthzVerificationError } from '../errors';
-import { type SetRequired, decodeMsgpackrString, getAlsStore } from '../utils';
-import type { JwtAlsType } from './jwt-authz-als.middleware';
+import { decodeMsgpackrString, getAlsStore, type SetRequired } from '../utils';
 import type { JwtAuthzOptions } from './jwt-authz.interface';
 import { createJwtStrategy, createRefreshStrategy } from './jwt-authz.strategy';
+import type { JwtAlsType } from './jwt-authz-als.middleware';
 
 jest.mock('@nestjs/common', () => {
   const actual = jest.requireActual('@nestjs/common');

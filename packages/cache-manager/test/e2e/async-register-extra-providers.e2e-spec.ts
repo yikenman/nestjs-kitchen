@@ -1,6 +1,6 @@
-import { Server } from 'net';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { Server } from 'net';
 import request from 'supertest';
 import { AsyncRegisterExtraModule } from '../modules/async-register-extra-providers/async-register-extra.module';
 

@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import {
+  applyDecorators,
   type ConfigurableModuleAsyncOptions,
   ConfigurableModuleBuilder,
   DynamicModule,
@@ -10,8 +11,7 @@ import {
   NestModule,
   SetMetadata,
   type Type,
-  UseGuards,
-  applyDecorators
+  UseGuards
 } from '@nestjs/common';
 import type { Reflector } from '@nestjs/core';
 import { uid } from 'uid';
@@ -26,14 +26,13 @@ import {
   type AuthzModuleBaseOptions,
   type AuthzModuleRoutesOptions,
   type CookieOptionsWithSecret,
+  createAuthzDecoratorFactory,
   type DeepReadonly,
   type MethodParameters,
-  type RoutesOptions,
-  createAuthzDecoratorFactory,
   mergeDynamicModuleConfigs,
-  normalizedArray
+  normalizedArray,
+  type RoutesOptions
 } from '../utils';
-import { type JwtAlsType, createJwtAuthzAlsMiddleware } from './jwt-authz-als.middleware';
 import { createJwtAuthzGuard, createJwtRefreshAuthzGuard } from './jwt-authz.guard';
 import {
   type JwtAuthzModuleOptions,
@@ -43,6 +42,7 @@ import {
 } from './jwt-authz.interface';
 import { createJwtAuthzService } from './jwt-authz.service';
 import { createJwtStrategy, createRefreshStrategy } from './jwt-authz.strategy';
+import { createJwtAuthzAlsMiddleware, type JwtAlsType } from './jwt-authz-als.middleware';
 
 const store: {
   globalInited: number;

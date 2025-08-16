@@ -1,6 +1,6 @@
-import { rejects } from 'assert';
 import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { rejects } from 'assert';
 import Tokens from 'csrf';
 import { lastValueFrom, of } from 'rxjs';
 import { DEFAULT_KEY } from './constants';

@@ -6,8 +6,8 @@ import {
   type DuckDBResult
 } from '@duckdb/node-api';
 import type { DuckDBResultReader } from '@duckdb/node-api/lib/DuckDBResultReader';
-import { ConnextionInstance } from '@nestjs-kitchen/connextion';
 import { Logger } from '@nestjs/common';
+import { ConnextionInstance } from '@nestjs-kitchen/connextion';
 import { CONNEXTION_DUCKDB_DEBUG, DuckDBResultAsyncMethods, DuckDBResultReaderAsyncMethods } from './constants';
 import { DuckDBError } from './errors';
 import type { DuckDBInstanceOptions } from './types';

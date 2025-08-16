@@ -8,9 +8,9 @@ import { AuthzProviderClass } from '../authz.provider';
 import { PASSPORT_PROPERTY, SESSION_PASSPORT_KEY } from '../constants';
 import { AuthzAnonymousError, AuthzError, AuthzVerificationError } from '../errors';
 import { getAlsStore } from '../utils';
-import type { SessionAlsType } from './session-authz-als.middleware';
 import type { SessionAuthzOptions } from './session-authz.interface';
 import { createSessionAuthzStrategy } from './session-authz.strategy';
+import type { SessionAlsType } from './session-authz-als.middleware';
 
 jest.mock('@nestjs/common', () => {
   const actual = jest.requireActual('@nestjs/common');

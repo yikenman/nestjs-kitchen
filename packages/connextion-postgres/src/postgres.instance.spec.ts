@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { EventEmitter } from 'node:stream';
-import { ConnextionInstance } from '@nestjs-kitchen/connextion';
 import { Logger } from '@nestjs/common';
+import { ConnextionInstance } from '@nestjs-kitchen/connextion';
 import { Pool, PoolClient } from 'pg';
 import { uid } from 'uid';
 import { ALS, CONNEXTION_POSTGRES_DEBUG, GET_CLIENT } from './constants';

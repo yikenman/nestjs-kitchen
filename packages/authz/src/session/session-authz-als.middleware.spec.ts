@@ -5,8 +5,8 @@ import type { NextFunction, Request, Response } from 'express';
 import { SESSION_PASSPORT_KEY } from '../constants';
 import { AuthzError } from '../errors';
 import { createSetCookieFn, merge } from '../utils';
-import { type SessionAlsType, createSessionAuthzAlsMiddleware } from './session-authz-als.middleware';
 import type { SessionAuthzOptions } from './session-authz.interface';
+import { createSessionAuthzAlsMiddleware, type SessionAlsType } from './session-authz-als.middleware';
 
 jest.mock('@nestjs/common', () => {
   const actual = jest.requireActual('@nestjs/common');

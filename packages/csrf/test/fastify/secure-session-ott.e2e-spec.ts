@@ -1,7 +1,7 @@
-import { Server } from 'net';
 import secureSession from '@fastify/secure-session';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
+import { Server } from 'net';
 import request from 'supertest';
 import { CsrfModule } from '../../src';
 import { AppController } from '../app.controller';

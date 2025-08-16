@@ -1,5 +1,5 @@
-import { ConnextionInstance } from '@nestjs-kitchen/connextion';
 import { Logger } from '@nestjs/common';
+import { ConnextionInstance } from '@nestjs-kitchen/connextion';
 import { Client, type Column, type RuntimeStats } from 'presto-client';
 import { CONNEXTION_PRESTO_DEBUG } from './constants';
 import { PrestoError } from './errors';
