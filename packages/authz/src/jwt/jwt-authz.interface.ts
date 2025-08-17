@@ -97,7 +97,7 @@ const normalizedJwtOptions = (jwtOptions?: JwtAuthzModuleOptions['jwt']) => {
 
   const verify: VerifyOptions = {
     algorithms,
-    audience,
+    audience: audience as VerifyOptions['audience'],
     clockTimestamp,
     clockTolerance,
     complete,
