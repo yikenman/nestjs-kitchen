@@ -1,5 +1,12 @@
 # @nestjs-kitchen/connextion
 
+## 2.0.6
+
+### Patch Changes
+
+- f1d8028: chore: bump version
+- f1d8028: style: fix
+
 ## 2.0.5
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @nestjs-kitchen/authz
 
+## 3.0.1
+
+### Patch Changes
+
+- f1d8028: chore: bump version
+- f1d8028: style: fix
+- a75e80f: test: fix case
+
 ## 3.0.0
 
 ### Major Changes
