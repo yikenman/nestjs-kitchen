@@ -1,5 +1,15 @@
 # @nestjs-kitchen/connextion-presto
 
+## 2.0.7
+
+### Patch Changes
+
+- f1d8028: chore: bump version
+- f1d8028: style: fix
+- Updated dependencies [f1d8028]
+- Updated dependencies [f1d8028]
+  - @nestjs-kitchen/connextion@2.0.6
+
 ## 2.0.6
 
 ### Patch Changes

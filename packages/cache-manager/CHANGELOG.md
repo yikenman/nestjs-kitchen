@@ -1,5 +1,12 @@
 # @nestjs-kitchen/cache-manager
 
+## 2.0.4
+
+### Patch Changes
+
+- f1d8028: chore: bump version
+- f1d8028: style: fix
+
 ## 2.0.3
 
 ### Patch Changes
