@@ -13,20 +13,21 @@ import {
   type Type,
   UseGuards
 } from '@nestjs/common';
-import type { Reflector } from '@nestjs/core';
+import { type Reflector } from '@nestjs/core';
 import { uid } from 'uid';
 import { AuthzProviderClass } from '../authz.provider';
 import { PREFIX, ROUTES_OPTIONS } from '../constants';
 import { AuthzError } from '../errors';
 import {
   type AbstractConstructor,
+  AdapterShim,
   type ApplyDecorators,
   type AuthzDecoParams,
   type AuthzMetaParams,
   type AuthzModuleBaseOptions,
   type AuthzModuleRoutesOptions,
-  type CookieOptionsWithSecret,
   createAuthzDecoratorFactory,
+  createOnceAdapterShimProvider,
   type DeepReadonly,
   type MethodParameters,
   mergeDynamicModuleConfigs,
@@ -91,6 +92,7 @@ const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN, ASYNC_OPTIONS_TYPE, OPTIO
         return mergeDynamicModuleConfigs(definition, {
           global,
           providers: [
+            ...createOnceAdapterShimProvider(),
             {
               provide: ROUTES_OPTIONS,
               useValue: {

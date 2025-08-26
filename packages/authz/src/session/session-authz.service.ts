@@ -2,7 +2,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { Inject, mixin, type Type } from '@nestjs/common';
 import { AuthzProviderClass } from '../authz.provider';
 import { AuthzError } from '../errors';
-import { type CookieOptionsWithSecret, type DeepReadonly, getAlsStore, type OmitClassInstance } from '../utils';
+import { type DeepReadonly, getAlsStore, type OmitClassInstance } from '../utils';
 import type { SessionAlsType } from './session-authz-als.middleware';
 
 export const createSessionAuthzService = <P = unknown, U = unknown>([AUTHZ_PROVIDER, ALS_PROVIDER]: [any, any]) => {

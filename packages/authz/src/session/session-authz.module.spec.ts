@@ -1,12 +1,16 @@
 import { applyDecorators, Injectable, SetMetadata, UseGuards } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AsyncLocalStorage } from 'async_hooks';
-import type { NextFunction, Request, Response } from 'express';
 import { uid } from 'uid';
 import { AuthzProviderClass } from '../authz.provider';
 import { PREFIX, ROUTES_OPTIONS } from '../constants';
 import { AuthzError } from '../errors';
-import { createAuthzDecoratorFactory, mergeDynamicModuleConfigs, normalizedArray } from '../utils';
+import {
+  createAuthzDecoratorFactory,
+  createOnceAdapterShimProvider,
+  mergeDynamicModuleConfigs,
+  normalizedArray
+} from '../utils';
 import { createSessionAuthzGuard } from './session-authz.guard';
 import { normalizedSessionAuthzModuleOptions } from './session-authz.interface';
 import { cereateSessionAuthzModule } from './session-authz.module';
@@ -41,7 +45,8 @@ jest.mock('../utils', () => {
     ...actual,
     createAuthzDecoratorFactory: jest.fn(actual.createAuthzDecoratorFactory),
     mergeDynamicModuleConfigs: jest.fn(actual.mergeDynamicModuleConfigs),
-    normalizedArray: jest.fn(actual.normalizedArray)
+    normalizedArray: jest.fn(actual.normalizedArray),
+    createOnceAdapterShimProvider: jest.fn(actual.createOnceAdapterShimProvider)
   };
 });
 
@@ -364,6 +369,10 @@ describe('Session Authz Module', () => {
 
         expect(secondCalled.providers).not.toContain(jest.mocked(createSessionAuthzStrategy).mock.results[0].value);
       });
+
+      it('should call createOnceAdapterShimProvider', () => {
+        expect(createOnceAdapterShimProvider).toHaveBeenCalled();
+      });
     });
 
     describe('registerAsync', () => {
@@ -442,6 +451,10 @@ describe('Session Authz Module', () => {
         });
 
         expect(secondCalled.providers).not.toContain(jest.mocked(createSessionAuthzStrategy).mock.results[0].value);
+      });
+
+      it('should call createOnceAdapterShimProvider', () => {
+        expect(createOnceAdapterShimProvider).toHaveBeenCalled();
       });
     });
 

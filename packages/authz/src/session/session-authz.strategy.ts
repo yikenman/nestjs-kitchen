@@ -1,7 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { Inject, mixin, type Type } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import type { Request } from 'express';
 import { Strategy } from 'passport-custom';
 import { AuthzProviderClass } from '../authz.provider';
 import { PASSPORT_PROPERTY, SESSION_PASSPORT_KEY } from '../constants';
@@ -26,7 +25,7 @@ export const createSessionAuthzStrategy = ([SESSION_STRATEGY, AUTHZ_PROVIDER, AL
       }
     }
 
-    async validate(req: Request) {
+    async validate(req: any) {
       const store = getAlsStore(this.als);
       const authOptions = store.authOptions;
 

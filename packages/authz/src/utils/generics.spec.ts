@@ -1,4 +1,4 @@
-import { isNotFalsy, merge, normalizedArray, normalizedObject } from './generics';
+import { isNotFalsy, normalizedArray, normalizedObject } from './generics';
 
 describe('Generics', () => {
   describe('isNotFalsy', () => {
@@ -52,54 +52,6 @@ describe('Generics', () => {
     it('should return the same object if there are no undefined values', () => {
       const input = { a: 1, b: 2 };
       expect(normalizedObject(input)).toEqual(input);
-    });
-  });
-
-  describe('merge', function () {
-    describe('an object', function () {
-      const a: Record<string, any> = { foo: 'bar' };
-      const b: Record<string, any> = { bar: 'baz' };
-      const o = merge(a, b);
-
-      it('should merge properties into first object', function () {
-        expect(Object.keys(a)).toHaveLength(2);
-        expect(a.foo).toBe('bar');
-        expect(a.bar).toBe('baz');
-      });
-
-      it('should return first argument', function () {
-        expect(o).toBe(a);
-      });
-    });
-
-    describe('an object with duplicate key', function () {
-      const a: Record<string, any> = { foo: 'bar', qux: 'corge' };
-      const b: Record<string, any> = { foo: 'baz' };
-      const o = merge(a, b);
-
-      it('should merge properties into first object', function () {
-        expect(Object.keys(a)).toHaveLength(2);
-        expect(a.foo).toBe('baz');
-        expect(a.qux).toBe('corge');
-      });
-
-      it('should return first argument', function () {
-        expect(o).toBe(a);
-      });
-    });
-
-    describe('without a source object', function () {
-      const a: Record<string, any> = { foo: 'bar' };
-      const o = merge(a);
-
-      it('should leave first object unmodified', function () {
-        expect(Object.keys(a)).toHaveLength(1);
-        expect(a.foo).toBe('bar');
-      });
-
-      it('should return first argument', function () {
-        expect(o).toBe(a);
-      });
     });
   });
 });

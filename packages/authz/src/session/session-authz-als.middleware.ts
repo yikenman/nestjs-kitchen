@@ -1,9 +1,12 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { Inject, mixin, NestMiddleware, type Type } from '@nestjs/common';
-import type { NextFunction, Request, Response } from 'express';
 import { SESSION_PASSPORT_KEY } from '../constants';
-import { AuthzError } from '../errors';
-import { type CookieOptionsWithSecret, createSetCookieFn, merge, type OmitClassInstance } from '../utils';
+import {
+  createSetCookieFn,
+  type OmitClassInstance,
+  type RawRequestWithShims,
+  type RawResponseWithShims
+} from '../utils';
 import type { SessionAuthzOptions } from './session-authz.interface';
 
 export interface SessionAlsType<P, U> {
@@ -13,7 +16,7 @@ export interface SessionAlsType<P, U> {
   authOptions: SessionAuthzOptions;
   logIn: (user: P) => Promise<void>;
   logOut: () => Promise<void>;
-  setCookie: (name: string, value: string, options?: CookieOptionsWithSecret) => void;
+  setCookie: (name: string, value: string, options?: Record<string, any>) => void;
 }
 
 export const createSessionAuthzAlsMiddleware = ([ALS_PROVIDER, SESSION_AUTHZ_OPTIONS]: [any, any]) => {
@@ -25,79 +28,61 @@ export const createSessionAuthzAlsMiddleware = ([ALS_PROVIDER, SESSION_AUTHZ_OPT
       readonly sessionAuthzOptions: SessionAuthzOptions
     ) {}
 
-    use(req: Request, res: Response, next: NextFunction) {
+    use(req: RawRequestWithShims, res: RawResponseWithShims, next: Function) {
       const keepSessionInfo = Boolean(this.sessionAuthzOptions.keepSessionInfo);
 
-      if (!req.session) {
-        return next(
-          new AuthzError('Login sessions require session support. Did you forget to use `express-session` middleware?')
-        );
-      }
-
-      const prevSession = req.session;
-
-      const store = {
+      const store: SessionAlsType<unknown, unknown> = {
         user: undefined,
         allowAnonymous: undefined,
         guardResult: undefined,
         authOptions: this.sessionAuthzOptions,
         // ref: https://github.com/jaredhanson/passport/blob/217018dbc46dcd4118dd6f2c60c8d97010c587f8/lib/sessionmanager.js#L14
-        logIn: <T>(user: T) => {
-          return new Promise<void>((resolve, reject) => {
-            req.session.regenerate(function (err) {
-              if (err) {
-                return reject(err);
-              }
+        logIn: async <T>(user: T) => {
+          const prevSession = req.shims.getAllSession();
 
-              if (keepSessionInfo) {
-                merge(req.session, prevSession);
-              }
+          await req.shims.regenerateSession();
 
-              // @ts-ignore
-              if (!req.session[SESSION_PASSPORT_KEY]) {
-                // @ts-ignore
-                req.session[SESSION_PASSPORT_KEY] = {};
+          if (keepSessionInfo) {
+            for (const key in prevSession) {
+              if (req.shims.sessionContains(key)) {
+                req.shims.setSession(key, prevSession[key]);
               }
-              // @ts-ignore
-              req.session[SESSION_PASSPORT_KEY].user = user;
+            }
+          }
 
-              req.session.save(function (err) {
-                if (err) {
-                  return reject(err);
-                }
-                resolve();
-              });
-            });
-          });
+          const passportSession = req.shims.getSession(SESSION_PASSPORT_KEY) ?? {};
+          passportSession.user = user;
+          req.shims.setSession(SESSION_PASSPORT_KEY, passportSession);
+
+          await req.shims.saveSession();
+
+          return;
         },
         // ref: https://github.com/jaredhanson/passport/blob/217018dbc46dcd4118dd6f2c60c8d97010c587f8/lib/sessionmanager.js#L57
-        logOut: () => {
-          return new Promise<void>((resolve, reject) => {
-            // @ts-ignore
-            if (req.session[SESSION_PASSPORT_KEY]) {
-              // @ts-ignore
-              delete req.session[SESSION_PASSPORT_KEY].user;
-            }
+        logOut: async () => {
+          if (req.shims.sessionContains(SESSION_PASSPORT_KEY)) {
+            const passportSession = req.shims.getSession(SESSION_PASSPORT_KEY)!;
+            delete passportSession.user;
+            req.shims.setSession(SESSION_PASSPORT_KEY, passportSession);
+          }
 
-            req.session.save(function (err) {
-              if (err) {
-                return reject(err);
+          const prevSession = req.shims.getAllSession();
+
+          await req.shims.saveSession();
+
+          await req.shims.regenerateSession();
+
+          if (keepSessionInfo) {
+            for (const key in prevSession) {
+              if (req.shims.sessionContains(key)) {
+                req.shims.setSession(key, prevSession[key]);
               }
-
-              req.session.regenerate(function (err) {
-                if (err) {
-                  return reject(err);
-                }
-                if (keepSessionInfo) {
-                  merge(req.session, prevSession);
-                }
-                resolve();
-              });
-            });
-          });
+            }
+          }
         },
         setCookie: createSetCookieFn(req, res)
       };
+
       this.als.run(store, () => {
         next();
       });

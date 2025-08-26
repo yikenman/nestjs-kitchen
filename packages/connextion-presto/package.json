@@ -57,7 +57,7 @@
   ],
   "peerDependencies": {
     "@nestjs-kitchen/connextion": "workspace:*",
-    "@nestjs/common": "^10.0.0 || ^11.0.0",
+    "@nestjs/common": "^11.0.0",
     "@types/presto-client": "^1.0.2",
     "presto-client": "^1.1.0"
   }

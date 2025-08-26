@@ -1,8 +1,12 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { Inject, mixin, NestMiddleware, type Type } from '@nestjs/common';
-import type { NextFunction, Request, Response } from 'express';
 import { JwtValidationType } from '../constants';
-import { type CookieOptionsWithSecret, createSetCookieFn, type OmitClassInstance } from '../utils';
+import {
+  createSetCookieFn,
+  type OmitClassInstance,
+  type RawRequestWithShims,
+  type RawResponseWithShims
+} from '../utils';
 import type { JwtAuthzOptions } from './jwt-authz.interface';
 
 export interface JwtAlsType<U> {
@@ -11,7 +15,7 @@ export interface JwtAlsType<U> {
   allowAnonymous?: boolean;
   guardResult?: boolean;
   authOptions: JwtAuthzOptions;
-  setCookie: (name: string, value: string, options?: CookieOptionsWithSecret) => void;
+  setCookie: (name: string, value: string, options?: Record<string, any>) => void;
 }
 
 export const createJwtAuthzAlsMiddleware = ([ALS_PROVIDER, JWT_AUTHZ_OPTIONS]: [any, any]) => {
@@ -23,21 +27,20 @@ export const createJwtAuthzAlsMiddleware = ([ALS_PROVIDER, JWT_AUTHZ_OPTIONS]: [
       readonly jwtAuthzOptions: JwtAuthzOptions
     ) {}
 
-    use(req: Request, res: Response, next: NextFunction) {
-      this.als.run(
-        {
-          user: undefined,
-          jwtVerifiedBy: undefined,
-          allowAnonymous: undefined,
-          guardResult: undefined,
-          // a workaround to pass jwtAuthzOptions to passport strategy.
-          authOptions: this.jwtAuthzOptions,
-          setCookie: createSetCookieFn(req, res)
-        },
-        () => {
-          next();
-        }
-      );
+    use(req: RawRequestWithShims, res: RawResponseWithShims, next: Function) {
+      const store: JwtAlsType<unknown> = {
+        user: undefined,
+        jwtVerifiedBy: undefined,
+        allowAnonymous: undefined,
+        guardResult: undefined,
+        // a workaround to pass jwtAuthzOptions to passport strategy.
+        authOptions: this.jwtAuthzOptions,
+        setCookie: createSetCookieFn(req, res)
+      };
+
+      this.als.run(store, () => {
+        next();
+      });
     }
   }
 

@@ -2,7 +2,6 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { mixin } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Request } from 'express';
 import jwt from 'jsonwebtoken';
 import { Strategy } from 'passport-custom';
 import { AuthzProviderClass } from '../authz.provider';
@@ -136,7 +135,7 @@ describe('Jwt Authz Strategy', () => {
 
   describe('validate', () => {
     it('should return user on successful validation', async () => {
-      const req = { [PASSPORT_PROPERTY]: undefined } as unknown as Request;
+      const req = { [PASSPORT_PROPERTY]: undefined };
       const mockPayload = { userId: 1 };
       const mockUser = { id: 1, name: 'Test User' };
 
@@ -168,7 +167,7 @@ describe('Jwt Authz Strategy', () => {
       // @ts-ignore
       jwtAuthzOptions.jwt.verify = undefined;
 
-      const req = { [PASSPORT_PROPERTY]: undefined } as unknown as Request;
+      const req = { [PASSPORT_PROPERTY]: undefined };
 
       // @ts-ignore
       const [user, error] = await jwtStrategy.validate(req);
@@ -182,7 +181,7 @@ describe('Jwt Authz Strategy', () => {
     });
 
     it('should return AuthzAnonymousError if no token is provided', async () => {
-      const req = { [PASSPORT_PROPERTY]: undefined } as unknown as Request;
+      const req = { [PASSPORT_PROPERTY]: undefined };
 
       mockJwtExtractor.mockReturnValue(null);
 
@@ -198,7 +197,7 @@ describe('Jwt Authz Strategy', () => {
     });
 
     it('should return AuthzAnonymousError if user is null', async () => {
-      const req = { [PASSPORT_PROPERTY]: undefined } as unknown as Request;
+      const req = { [PASSPORT_PROPERTY]: undefined };
       const mockPayload = { userId: 1 };
       const mockUser = null;
 
@@ -214,7 +213,7 @@ describe('Jwt Authz Strategy', () => {
     });
 
     it('should return AuthzVerificationError if jwt.verify throws Error', async () => {
-      const req = { [PASSPORT_PROPERTY]: undefined } as unknown as Request;
+      const req = { [PASSPORT_PROPERTY]: undefined };
       jwt.verify = jest.fn(() => {
         throw new Error('Verification failed');
       });
@@ -228,7 +227,7 @@ describe('Jwt Authz Strategy', () => {
     });
 
     it('should return AuthzVerificationError if jwt.verify throws customr object', async () => {
-      const req = { [PASSPORT_PROPERTY]: undefined } as unknown as Request;
+      const req = { [PASSPORT_PROPERTY]: undefined };
       jwt.verify = jest.fn(() => {
         throw 'Error';
       });
@@ -242,7 +241,7 @@ describe('Jwt Authz Strategy', () => {
     });
 
     it('should return AuthzVerificationError if jwt.verify throws Error', async () => {
-      const req = { [PASSPORT_PROPERTY]: undefined } as unknown as Request;
+      const req = { [PASSPORT_PROPERTY]: undefined };
       jwt.verify = jest.fn(() => {
         throw new Error('Verification failed');
       });
@@ -256,7 +255,7 @@ describe('Jwt Authz Strategy', () => {
     });
 
     it('should return AuthzVerificationError if AuthzProvider.authenticate throws Error', async () => {
-      const req = { [PASSPORT_PROPERTY]: undefined } as unknown as Request;
+      const req = { [PASSPORT_PROPERTY]: undefined };
       const mockPayload = { userId: 1 };
 
       // @ts-ignore
@@ -345,7 +344,7 @@ describe('RefreshStrategy', () => {
 
   describe('validate', () => {
     it('should return user on successful validation', async () => {
-      const req = { [PASSPORT_PROPERTY]: undefined } as unknown as Request;
+      const req = { [PASSPORT_PROPERTY]: undefined };
       const mockEncodedPayload = {
         data: 'encoded string'
       };
@@ -387,7 +386,7 @@ describe('RefreshStrategy', () => {
       // @ts-ignore
       jwtAuthzOptions.refresh.verify = undefined;
 
-      const req = { [PASSPORT_PROPERTY]: undefined } as unknown as Request;
+      const req = { [PASSPORT_PROPERTY]: undefined };
 
       // @ts-ignore
       const [user, error] = await refreshStrategy.validate(req);
@@ -401,7 +400,7 @@ describe('RefreshStrategy', () => {
     });
 
     it('should return AuthzAnonymousError if no token is provided', async () => {
-      const req = { [PASSPORT_PROPERTY]: undefined } as unknown as Request;
+      const req = { [PASSPORT_PROPERTY]: undefined };
 
       mockJwtExtractor.mockReturnValue(null);
 
@@ -417,7 +416,7 @@ describe('RefreshStrategy', () => {
     });
 
     it('should return AuthzAnonymousError if user is null', async () => {
-      const req = { [PASSPORT_PROPERTY]: undefined } as unknown as Request;
+      const req = { [PASSPORT_PROPERTY]: undefined };
       const mockPayload = { userId: 1 };
       const mockUser = null;
 
@@ -433,7 +432,7 @@ describe('RefreshStrategy', () => {
     });
 
     it('should return AuthzVerificationError if jwt.verify throws Error', async () => {
-      const req = { [PASSPORT_PROPERTY]: undefined } as unknown as Request;
+      const req = { [PASSPORT_PROPERTY]: undefined };
       jwt.verify = jest.fn(() => {
         throw new Error('Verification failed');
       });
@@ -447,7 +446,7 @@ describe('RefreshStrategy', () => {
     });
 
     it('should return AuthzVerificationError if jwt.verify throws customr object', async () => {
-      const req = { [PASSPORT_PROPERTY]: undefined } as unknown as Request;
+      const req = { [PASSPORT_PROPERTY]: undefined };
       jwt.verify = jest.fn(() => {
         throw 'Error';
       });
@@ -461,7 +460,7 @@ describe('RefreshStrategy', () => {
     });
 
     it('should return AuthzVerificationError if AuthzProvider.authenticate throws Error', async () => {
-      const req = { [PASSPORT_PROPERTY]: undefined } as unknown as Request;
+      const req = { [PASSPORT_PROPERTY]: undefined };
       const mockPayload = { userId: 1 };
 
       // @ts-ignore

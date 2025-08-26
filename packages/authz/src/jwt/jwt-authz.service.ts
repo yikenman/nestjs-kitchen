@@ -4,13 +4,7 @@ import jwt from 'jsonwebtoken';
 import { AuthzProviderClass } from '../authz.provider';
 import { JwtValidationType } from '../constants';
 import { AuthzError } from '../errors';
-import {
-  type CookieOptionsWithSecret,
-  type DeepReadonly,
-  encodeMsgpackrString,
-  getAlsStore,
-  type OmitClassInstance
-} from '../utils';
+import { type DeepReadonly, encodeMsgpackrString, getAlsStore, type OmitClassInstance } from '../utils';
 import type { JwtAuthzOptions, RefreshPayload } from './jwt-authz.interface';
 import type { JwtAlsType } from './jwt-authz-als.middleware';
 

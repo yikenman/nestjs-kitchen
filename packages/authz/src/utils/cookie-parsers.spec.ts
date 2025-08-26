@@ -1,6 +1,5 @@
 import * as cookie from 'cookie';
 import cookieParser from 'cookie-parser';
-import type { Request } from 'express';
 import { customCookieParser, normalCookieParser } from './cookie-parsers';
 
 jest.mock('cookie', () => {
@@ -28,7 +27,7 @@ beforeEach(() => {
 });
 
 describe('Cookie Parsers', () => {
-  let req: Request;
+  let req: any;
 
   const reqCookies = {
     name: 'value'
@@ -50,7 +49,7 @@ describe('Cookie Parsers', () => {
       cookies: undefined,
       signedCookies: undefined,
       secret: undefined
-    } as unknown as Request;
+    };
   });
 
   describe('normalCookieParser', () => {
@@ -239,6 +238,37 @@ describe('Cookie Parsers', () => {
       expect(cookie.parse).toHaveBeenCalledTimes(1);
       expect(cookie.parse).toHaveBeenCalledWith(reqCookie, { decode });
       expect(decode).toHaveBeenCalled();
+    });
+  });
+
+  describe('Fastify (@fastify/cookie)', () => {
+    describe('normalCookieParser', () => {
+      it('should save unsigned cookies to signedCookies', () => {
+        const signedCookies = {
+          signed: 'otherValue'
+        };
+        req.cookies = {
+          ...signedCookies,
+          other: 'value'
+        };
+        req.unsignCookie = jest.fn((value: any) => {
+          if (value === 'otherValue') {
+            return {
+              valid: true,
+              value: value
+            };
+          }
+          return {
+            valid: false
+          };
+        });
+
+        const parsed = normalCookieParser(req);
+
+        expect(req.unsignCookie).toHaveBeenCalled();
+        expect(parsed.cookies).toEqual(req.cookies);
+        expect(parsed.signedCookies).toEqual(signedCookies);
+      });
     });
   });
 });

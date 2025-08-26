@@ -2,9 +2,8 @@ import { CanActivate, ExecutionContext, Inject, mixin, type Type } from '@nestjs
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import type { AsyncLocalStorage } from 'async_hooks';
-import type { Request } from 'express';
 import { AuthzProviderClass } from '../authz.provider';
-import { AuthzAnonymousError, type AuthzError } from '../errors';
+import { AuthzAnonymousError, AuthzError } from '../errors';
 import {
   type AuthzMetaParams,
   getAllowAnonymous,
@@ -93,7 +92,7 @@ export const createSessionAuthzGuard = ([
         skipFalsyMetadata: this.sessionAuthzOptions.skipFalsyMetadata
       });
 
-      const req: Request = context.switchToHttp().getRequest();
+      const req = context.switchToHttp().getRequest();
 
       store.allowAnonymous = getAllowAnonymous(contextParamsList, {
         defaultAllowAnonymous: this.sessionAuthzOptions.defaultAllowAnonymous

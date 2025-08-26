@@ -3,7 +3,6 @@
  */
 import { parse } from 'node:url';
 import type { ParseOptions } from 'cookie';
-import type { Request } from 'express';
 import { customCookieParser, normalCookieParser, normalizedArray } from '../utils';
 
 const re = /(\S+)\s+(\S+)/;
@@ -36,7 +35,7 @@ export const ExtractJwt = {
    * @returns {JwtFromRequestFunction} A function that takes a request object and returns the extracted token.
    */
   fromHeader: (header_name: string): JwtFromRequestFunction => {
-    return function (request: Request) {
+    return function (request: any) {
       let token: string | null = null;
       if (request.headers[header_name]) {
         token = request.headers[header_name] as string;
@@ -51,7 +50,7 @@ export const ExtractJwt = {
    * @returns {JwtFromRequestFunction} A function that takes a request object and returns the extracted token.
    */
   fromBodyField: (field_name: string): JwtFromRequestFunction => {
-    return function (request: Request) {
+    return function (request: any) {
       let token: string | null = null;
       if (request.body && Object.prototype.hasOwnProperty.call(request.body, field_name)) {
         token = request.body[field_name];
@@ -66,7 +65,7 @@ export const ExtractJwt = {
    * @returns {JwtFromRequestFunction} A function that takes a request object and returns the extracted token.
    */
   fromUrlQueryParameter: (param_name: string): JwtFromRequestFunction => {
-    return function (request: Request) {
+    return function (request: any) {
       let token: string | null = null;
       const parsed_url = parse(request.url, true);
       if (parsed_url.query && Object.prototype.hasOwnProperty.call(parsed_url.query, param_name)) {
@@ -83,7 +82,7 @@ export const ExtractJwt = {
    */
   fromAuthHeaderWithScheme: (auth_scheme: string): JwtFromRequestFunction => {
     var auth_scheme_lower = auth_scheme.toLowerCase();
-    return function (request: Request) {
+    return function (request: any) {
       let token: string | null = null;
       if (request.headers[AUTH_HEADER]) {
         var auth_params = parseAuthHeader(request.headers[AUTH_HEADER]);
@@ -129,7 +128,7 @@ export const ExtractJwt = {
     const signed = options?.signed ?? Boolean(secrets.length);
     const targetParser = Boolean(secrets.length) ? customCookieParser : normalCookieParser;
 
-    return (req: Request) => {
+    return (req: any) => {
       const { cookies, signedCookies } = targetParser(req, secrets, decode);
 
       let token: string | null = null;
@@ -151,7 +150,7 @@ export const ExtractJwt = {
       throw new TypeError('extractors.fromExtractors expects an array');
     }
 
-    return function (this: unknown, request: Request) {
+    return function (this: unknown, request: any) {
       let token: string | null = null;
       let index = 0;
       while (!token && index < extractors.length) {

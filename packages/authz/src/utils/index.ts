@@ -1,3 +1,4 @@
+export * from './adapter-shim';
 export * from './cookie-parsers';
 export * from './create-authz-decorator-factory';
 export * from './create-set-cookie-fn';
@@ -8,4 +9,5 @@ export * from './get-context-authz-meta-params-list';
 export * from './get-passport-property';
 export * from './merge-dynamic-module-configs';
 export * from './msgpackrs';
+export * from './safe-clone';
 export * from './types';

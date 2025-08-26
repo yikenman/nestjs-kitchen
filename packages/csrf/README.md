@@ -17,7 +17,7 @@ A CSRF module in NextJS.
 
 - ✅ Supports one-time-use CSRF tokens
 
-- ✅ Compatible with both `@nestjs/platform-express` and `@nestjs/platform-fastify` frameworks
+- ✅ Compatible with both `@nestjs/platform-express` and `@nestjs/platform-fastify`
 
 ## Install
 
