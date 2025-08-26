@@ -16,12 +16,15 @@ Simplest authentication & authorization module in NextJS.
 
 ## Features
 
-- JWT based authentication
-- Session based authentication
-- Customizable authorization
-- Simplified setups and APIs 
-- Anonymous access support
-- Simultaneous multiple strategy (JWT/Session) uses
+- ✅ JWT based authentication
+
+- ✅ Session based authentication
+
+- ✅ Flexible authorization
+
+- ✅ Support Anonymous access
+
+- ✅ Compatible with both `@nestjs/platform-express` and `@nestjs/platform-fastify`
 
 ## Install
 
@@ -30,6 +33,20 @@ Once completed NestJS project setup, install this package and its dependencies:
 ```bash
 $ npm install --save @nestjs/passport passport @nestjs-kitchen/authz
 ```
+
+## Platform prerequisite
+
+Different platforms require different dependencies:
+
+- For `@nestjs/platform-express`:
+
+  It requires [`express-session`](https://www.npmjs.com/package/express-session).
+
+- For `@nestjs/platform-fastify`:
+
+  It requires [`@fastify/cookie`](https://www.npmjs.com/package/@fastify/cookie) and [`@fastify/session`](https://www.npmjs.com/package/@fastify/session).
+
+  Or [`@fastify/secure-session`](https://www.npmjs.com/package/@fastify/secure-session) instead.
 
 ## Beark change
 

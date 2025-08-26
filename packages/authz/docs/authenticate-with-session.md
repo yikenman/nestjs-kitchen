@@ -1,17 +1,27 @@
 # Authenticate with Session
 
-**NOTE: ensure you have setup [`express-session`](https://www.npmjs.com/package/express-session).**
+## Preinstall
 
-```typescript
-import * as session from 'express-session';
-// somewhere in your initialization file
-app.use(
-  session({
-    secret: 'my-secret',
-    resave: false,
-    saveUninitialized: false,
-  }),
-);
+### For `@nestjs/platform-express`
+
+Please install and setup [`express-session`](https://www.npmjs.com/package/express-session):
+
+```
+npm install --save express-session @types/express-session
+```
+
+### For `@nestjs/platform-express`
+
+Please install [`@fastify/cookie`](https://www.npmjs.com/package/@fastify/cookie), [`@fastify/session`](https://www.npmjs.com/package/@fastify/session)
+
+```
+npm install --save @fastify/cookie @fastify/session
+```
+
+or install [`@fastify/secure-session`](https://www.npmjs.com/package/@fastify/secure-session)
+
+```
+npm install --save @fastify/secure-session
 ```
 
 ## 1. Create file `authz.provider.ts`:
