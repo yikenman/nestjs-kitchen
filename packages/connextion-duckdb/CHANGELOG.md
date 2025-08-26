@@ -1,5 +1,14 @@
 # @nestjs-kitchen/connextion-duckdb
 
+## 2.0.7
+
+### Patch Changes
+
+- 6067d7c: chore: bump version
+- 6067d7c: chore: remove nestjs v10 support
+- Updated dependencies [6067d7c]
+  - @nestjs-kitchen/connextion@2.0.7
+
 ## 2.0.6
 
 ### Patch Changes

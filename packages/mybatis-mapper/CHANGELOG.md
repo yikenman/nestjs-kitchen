@@ -1,5 +1,11 @@
 # @nestjs-kitchen/mybatis-mapper
 
+## 2.0.2
+
+### Patch Changes
+
+- 6067d7c: chore: remove nestjs v10 support
+
 ## 2.0.1
 
 ### Patch Changes
