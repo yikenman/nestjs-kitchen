@@ -1,7 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { mixin } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import type { NextFunction, Request, Response } from 'express';
 import { createSetCookieFn } from '../utils';
 import type { JwtAuthzOptions } from './jwt-authz.interface';
 import { createJwtAuthzAlsMiddleware, JwtAlsType } from './jwt-authz-als.middleware';
@@ -66,9 +65,9 @@ describe('Jwt Authz ALS Middleware', () => {
   });
 
   it('should set up ALS context with default values', (done) => {
-    const req = {} as Request;
-    const res = {} as Response;
-    const next: NextFunction = () => {
+    const req: any = {};
+    const res: any = {};
+    const next = () => {
       const store = als.getStore();
       expect(store).toEqual({
         user: undefined,
@@ -87,9 +86,9 @@ describe('Jwt Authz ALS Middleware', () => {
   });
 
   it('should call next function', (done) => {
-    const req = {} as Request;
-    const res = {} as Response;
-    const next: NextFunction = jest.fn(() => done());
+    const req: any = {};
+    const res: any = {};
+    const next = jest.fn(() => done());
 
     middleware.use(req, res, next);
     expect(next).toHaveBeenCalled();

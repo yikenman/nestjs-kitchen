@@ -24,14 +24,3 @@ export const normalizedObject = <T extends Record<string, any>>(obj?: T) => {
   }
   return Object.fromEntries(filtered) as T;
 };
-
-// ref: https://github.com/jaredhanson/utils-merge/blob/master/index.js
-export const merge = <T extends Record<string, any>, U extends Record<string, any>>(obj1: T, obj2?: U): T & U => {
-  if (obj1 && obj2) {
-    for (var key in obj2) {
-      // @ts-ignore
-      obj1[key] = obj2[key];
-    }
-  }
-  return obj1 as T & U;
-};

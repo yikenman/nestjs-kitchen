@@ -5,7 +5,12 @@ import { uid } from 'uid';
 import { AuthzProviderClass } from '../authz.provider';
 import { PREFIX, ROUTES_OPTIONS } from '../constants';
 import { AuthzError } from '../errors';
-import { createAuthzDecoratorFactory, mergeDynamicModuleConfigs, normalizedArray } from '../utils';
+import {
+  createAuthzDecoratorFactory,
+  createOnceAdapterShimProvider,
+  mergeDynamicModuleConfigs,
+  normalizedArray
+} from '../utils';
 import { createJwtAuthzGuard, createJwtRefreshAuthzGuard } from './jwt-authz.guard';
 import { normalizedJwtAuthzModuleOptions } from './jwt-authz.interface';
 import { createJwtAuthzModule } from './jwt-authz.module';
@@ -40,7 +45,8 @@ jest.mock('../utils', () => {
     ...actual,
     createAuthzDecoratorFactory: jest.fn(actual.createAuthzDecoratorFactory),
     mergeDynamicModuleConfigs: jest.fn(actual.mergeDynamicModuleConfigs),
-    normalizedArray: jest.fn(actual.normalizedArray)
+    normalizedArray: jest.fn(actual.normalizedArray),
+    createOnceAdapterShimProvider: jest.fn(actual.createOnceAdapterShimProvider)
   };
 });
 
@@ -403,6 +409,10 @@ describe('JWT Authz Module', () => {
         expect(secondCalled.providers).not.toContain(jest.mocked(createJwtStrategy).mock.results[0].value);
         expect(secondCalled.providers).not.toContain(jest.mocked(createRefreshStrategy).mock.results[0].value);
       });
+
+      it('should call createOnceAdapterShimProvider', () => {
+        expect(createOnceAdapterShimProvider).toHaveBeenCalled();
+      });
     });
 
     describe('registerAsync', () => {
@@ -484,6 +494,10 @@ describe('JWT Authz Module', () => {
 
         expect(secondCalled.providers).not.toContain(jest.mocked(createJwtStrategy).mock.results[0].value);
         expect(secondCalled.providers).not.toContain(jest.mocked(createRefreshStrategy).mock.results[0].value);
+      });
+
+      it('should call createOnceAdapterShimProvider', () => {
+        expect(createOnceAdapterShimProvider).toHaveBeenCalled();
       });
     });
 

@@ -1,6 +1,5 @@
 import type { applyDecorators } from '@nestjs/common';
 import type { RouteInfo, Type } from '@nestjs/common/interfaces';
-import type { CookieOptions } from 'express';
 import type { AuthzProviderClass } from '../authz.provider';
 
 export type OmitClassInstance<T extends abstract new (...args: any) => any, K extends keyof any> = Type<
@@ -23,13 +22,6 @@ export type IsUnknown<T> = unknown extends T // `T` can be `unknown` or `any`
 
 export type DeepReadonly<T> = {
   readonly [K in keyof T]: T[K] extends object ? DeepReadonly<T[K]> : T[K];
-};
-
-export type CookieOptionsWithSecret = CookieOptions & {
-  /**
-   * a string or array used to sign cookies.
-   */
-  secret?: string | string[];
 };
 
 export interface AuthzDecoBaseOptions {

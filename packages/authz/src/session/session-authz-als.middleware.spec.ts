@@ -1,10 +1,9 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { mixin } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import type { NextFunction, Request, Response } from 'express';
 import { SESSION_PASSPORT_KEY } from '../constants';
 import { AuthzError } from '../errors';
-import { createSetCookieFn, merge } from '../utils';
+import { createSetCookieFn, type RawRequestWithShims, type RawResponseWithShims } from '../utils';
 import type { SessionAuthzOptions } from './session-authz.interface';
 import { createSessionAuthzAlsMiddleware, type SessionAlsType } from './session-authz-als.middleware';
 
@@ -22,7 +21,6 @@ jest.mock('../utils', () => {
 
   return {
     ...actual,
-    merge: jest.fn(actual.merge),
     createSetCookieFn: jest.fn(actual.createSetCookieFn)
   };
 });
@@ -39,12 +37,32 @@ describe('Session Authz ALS Middleware', () => {
   let middleware: InstanceType<ReturnType<typeof createSessionAuthzAlsMiddleware>>;
   let als: AsyncLocalStorage<SessionAlsType<unknown, unknown>>;
   let sessionAuthzOptions: SessionAuthzOptions;
+  let defaultReq: RawRequestWithShims;
+  let defaultRes: RawResponseWithShims;
 
   beforeEach(async () => {
     als = new AsyncLocalStorage();
     sessionAuthzOptions = {
       keepSessionInfo: false
     } as SessionAuthzOptions;
+
+    defaultReq = {
+      shims: {
+        getSession: jest.fn(),
+        getAllSession: jest.fn(),
+        setSession: jest.fn(),
+        deleteSession: jest.fn(),
+        sessionContains: jest.fn(),
+        regenerateSession: jest.fn(),
+        saveSession: jest.fn()
+      }
+    };
+
+    defaultRes = {
+      shims: {
+        setCookie: jest.fn()
+      }
+    };
 
     const SessionAuthzAlsMiddleware = createSessionAuthzAlsMiddleware([ALS_PROVIDER, SESSION_AUTHZ_OPTIONS]);
 
@@ -68,11 +86,14 @@ describe('Session Authz ALS Middleware', () => {
   });
 
   it('should set up ALS context with default values', (done) => {
-    const req = {
+    const req: RawRequestWithShims = {
+      ...defaultReq,
       session: {}
-    } as Request;
-    const res = {} as Response;
-    const next: NextFunction = () => {
+    };
+    const res: RawResponseWithShims = {
+      ...defaultRes
+    };
+    const next = () => {
       const store = als.getStore();
       expect(store).toEqual({
         user: undefined,
@@ -90,40 +111,33 @@ describe('Session Authz ALS Middleware', () => {
   });
 
   it('should call next function', (done) => {
-    const req = {
+    const req: RawRequestWithShims = {
+      ...defaultReq,
       session: {}
-    } as Request;
-    const res = {} as Response;
-    const next: NextFunction = jest.fn(() => done());
+    };
+    const res: RawResponseWithShims = {
+      ...defaultRes
+    };
+    const next = jest.fn(() => done());
 
     middleware.use(req, res, next);
     expect(next).toHaveBeenCalled();
   });
 
-  it('should throw AuthzError when req.session is not defined', (done) => {
-    const req = {} as Request;
-    const res = {} as Response;
-    const next: NextFunction = jest.fn(() => done());
-
-    middleware.use(req, res, next);
-
-    expect(next).toHaveBeenCalledWith(expect.any(AuthzError));
-  });
-
   describe('ALS context methods', () => {
     describe('logIn', () => {
-      const res = {} as Response;
-      let req: any;
+      const res: RawResponseWithShims = {
+        ...defaultRes
+      };
+      let req: RawRequestWithShims;
       let user: any;
       let logIn: SessionAlsType<unknown, unknown>['logIn'];
 
       beforeEach(() => {
         user = { id: 1, username: 'testUser' };
         req = {
-          session: {
-            regenerate: jest.fn(),
-            save: jest.fn()
-          }
+          ...defaultReq,
+          session: {}
         };
 
         middleware.use(req, res, () => {
@@ -133,15 +147,16 @@ describe('Session Authz ALS Middleware', () => {
       });
 
       it('should successfully log in a user without keeping session info', async () => {
-        req.session.regenerate.mockImplementation((callback: Function) => callback(null));
-        req.session.save.mockImplementation((callback: Function) => callback(null));
+        jest.mocked(req.shims.regenerateSession).mockResolvedValue();
+        jest.mocked(req.shims.saveSession).mockResolvedValue();
 
         await expect(logIn(user)).resolves.toBeUndefined();
 
-        expect(merge).not.toHaveBeenCalled();
-        expect(req.session.regenerate).toHaveBeenCalled();
-        expect(req.session.save).toHaveBeenCalled();
-        expect(req.session[SESSION_PASSPORT_KEY].user).toBe(user);
+        expect(req.shims.getAllSession).toHaveBeenCalled();
+        expect(req.shims.regenerateSession).toHaveBeenCalled();
+        expect(req.shims.getSession).toHaveBeenCalledWith(SESSION_PASSPORT_KEY);
+        expect(req.shims.setSession).toHaveBeenCalledWith(SESSION_PASSPORT_KEY, { user: user });
+        expect(req.shims.saveSession).toHaveBeenCalled();
       });
 
       it('should successfully log in a user with keeping session info', async () => {
@@ -152,57 +167,64 @@ describe('Session Authz ALS Middleware', () => {
         });
 
         const prevSession = { data: 'previous' };
-        req.session = { ...req.session, ...prevSession };
+        jest.mocked(req.shims.getAllSession).mockReturnValue(prevSession);
+        jest.mocked(req.shims.regenerateSession).mockResolvedValue();
+        jest.mocked(req.shims.sessionContains).mockReturnValue(true);
+        jest.mocked(req.shims.saveSession).mockResolvedValue();
 
-        req.session.regenerate.mockImplementation((callback: Function) => callback(null));
-        req.session.save.mockImplementation((callback: Function) => callback(null));
+        req.session = { ...req.session, ...prevSession };
 
         await expect(logIn(user)).resolves.toBeUndefined();
 
-        expect(merge).toHaveBeenCalledTimes(1);
-        expect(req.session.regenerate).toHaveBeenCalled();
-        expect(req.session.save).toHaveBeenCalled();
-        expect(req.session[SESSION_PASSPORT_KEY].user).toBe(user);
-        expect(req.session).toMatchObject(prevSession);
+        expect(req.shims.getAllSession).toHaveBeenCalled();
+        expect(req.shims.regenerateSession).toHaveBeenCalled();
+        expect(req.shims.sessionContains).toHaveBeenCalled();
+        for (const key in prevSession) {
+          expect(req.shims.setSession).toHaveBeenCalledWith(key, prevSession[key]);
+        }
+        expect(req.shims.getSession).toHaveBeenCalledWith(SESSION_PASSPORT_KEY);
+        expect(req.shims.setSession).toHaveBeenCalledWith(SESSION_PASSPORT_KEY, { user: user });
+        expect(req.shims.saveSession).toHaveBeenCalled();
       });
 
       it('should reject when session.regenerate fails', async () => {
         const error = new Error('regenerate error');
-        req.session.regenerate.mockImplementation((callback: Function) => callback(error));
+        jest.mocked(req.shims.regenerateSession).mockRejectedValue(error);
 
         await expect(logIn(user)).rejects.toThrow('regenerate error');
 
-        expect(req.session.regenerate).toHaveBeenCalled();
-        expect(req.session.save).not.toHaveBeenCalled();
+        expect(req.shims.regenerateSession).toHaveBeenCalled();
+        expect(req.shims.saveSession).not.toHaveBeenCalled();
       });
 
       it('should reject when session.save fails', async () => {
-        req.session.regenerate.mockImplementation((callback: Function) => callback(null));
         const error = new Error('save error');
-        req.session.save.mockImplementation((callback: Function) => callback(error));
+        jest.mocked(req.shims.saveSession).mockRejectedValue(error);
 
         await expect(logIn(user)).rejects.toThrow('save error');
 
-        expect(req.session.regenerate).toHaveBeenCalled();
-        expect(req.session.save).toHaveBeenCalled();
+        expect(req.shims.regenerateSession).toHaveBeenCalled();
+        expect(req.shims.saveSession).toHaveBeenCalled();
       });
     });
 
     describe('logOut', () => {
-      const res = {} as Response;
-      let req: any;
+      const res: RawResponseWithShims = {
+        ...defaultRes
+      };
+      let req: RawRequestWithShims;
       let prevSession: Record<string, unknown>;
       let logOut: SessionAlsType<unknown, unknown>['logOut'];
 
       beforeEach(() => {
-        prevSession = { data: 'previous' };
+        prevSession = { other: 'other' };
         req = {
+          ...defaultReq,
           session: {
             [SESSION_PASSPORT_KEY]: {
-              user: { id: 1, username: 'testUser' }
-            },
-            regenerate: jest.fn(),
-            save: jest.fn()
+              user: { id: 1, username: 'testUser' },
+              other: 'other'
+            }
           }
         };
 
@@ -213,14 +235,19 @@ describe('Session Authz ALS Middleware', () => {
       });
 
       it('should log out a user successfully without keeping session info', async () => {
-        req.session.save.mockImplementation((callback: Function) => callback(null));
-        req.session.regenerate.mockImplementation((callback: Function) => callback(null));
+        jest.mocked(req.shims.sessionContains).mockReturnValueOnce(true);
+        jest.mocked(req.shims.getSession).mockReturnValueOnce(req.session[SESSION_PASSPORT_KEY]);
+        jest.mocked(req.shims.getAllSession).mockReturnValue(prevSession);
+        jest.mocked(req.shims.saveSession).mockResolvedValue();
+        jest.mocked(req.shims.regenerateSession).mockResolvedValue();
+        jest.mocked(req.shims.sessionContains).mockReturnValue(true);
 
         await expect(logOut()).resolves.toBeUndefined();
 
-        expect(req.session.save).toHaveBeenCalled();
-        expect(req.session.regenerate).toHaveBeenCalled();
-        expect(req.session[SESSION_PASSPORT_KEY].user).toBeUndefined();
+        expect(req.shims.setSession).toHaveBeenCalledWith(SESSION_PASSPORT_KEY, prevSession);
+        expect(req.shims.getAllSession).toHaveBeenCalled();
+        expect(req.shims.saveSession).toHaveBeenCalled();
+        expect(req.shims.regenerateSession).toHaveBeenCalled();
       });
 
       it('should log out a user successfully and keep session info', async () => {
@@ -231,56 +258,66 @@ describe('Session Authz ALS Middleware', () => {
           logOut = store?.logOut!;
         });
 
-        req.session.save.mockImplementation((callback: Function) => callback(null));
-        req.session.regenerate.mockImplementation((callback: Function) => callback(null));
+        jest.mocked(req.shims.sessionContains).mockReturnValueOnce(true);
+        jest.mocked(req.shims.getSession).mockReturnValueOnce(req.session[SESSION_PASSPORT_KEY]);
+        jest.mocked(req.shims.getAllSession).mockReturnValue(prevSession);
+        jest.mocked(req.shims.saveSession).mockResolvedValue();
+        jest.mocked(req.shims.regenerateSession).mockResolvedValue();
+        jest.mocked(req.shims.sessionContains).mockReturnValue(true);
 
         await expect(logOut()).resolves.toBeUndefined();
 
-        expect(req.session.save).toHaveBeenCalled();
-        expect(req.session.regenerate).toHaveBeenCalled();
-        expect(req.session).toMatchObject(prevSession);
+        expect(req.shims.setSession).toHaveBeenCalledWith(SESSION_PASSPORT_KEY, prevSession);
+        expect(req.shims.getAllSession).toHaveBeenCalled();
+        expect(req.shims.saveSession).toHaveBeenCalled();
+        expect(req.shims.regenerateSession).toHaveBeenCalled();
+        for (const key in prevSession) {
+          expect(req.shims.setSession).toHaveBeenCalledWith(key, prevSession[key]);
+        }
       });
 
       it('should handle case when session does not have SESSION_PASSPORT_KEY', async () => {
         delete req.session[SESSION_PASSPORT_KEY];
-        req.session.save.mockImplementation((callback: Function) => callback(null));
-        req.session.regenerate.mockImplementation((callback: Function) => callback(null));
+        jest.mocked(req.shims.sessionContains).mockReturnValueOnce(false);
+        jest.mocked(req.shims.getSession).mockReturnValueOnce(req.session[SESSION_PASSPORT_KEY]);
 
         await expect(logOut()).resolves.toBeUndefined();
 
-        expect(req.session.save).toHaveBeenCalled();
-        expect(req.session.regenerate).toHaveBeenCalled();
-        expect(req.session).not.toHaveProperty(SESSION_PASSPORT_KEY);
+        expect(req.shims.setSession).not.toHaveBeenCalledWith(SESSION_PASSPORT_KEY, prevSession);
+        expect(req.shims.saveSession).toHaveBeenCalled();
+        expect(req.shims.regenerateSession).toHaveBeenCalled();
       });
 
       it('should reject when session.save fails', async () => {
         const error = new Error('save error');
-        req.session.save.mockImplementation((callback: Function) => callback(error));
+        jest.mocked(req.shims.saveSession).mockRejectedValue(error);
 
         await expect(logOut()).rejects.toThrow('save error');
 
-        expect(req.session.save).toHaveBeenCalled();
-        expect(req.session.regenerate).not.toHaveBeenCalled();
+        expect(req.shims.saveSession).toHaveBeenCalled();
+        expect(req.shims.regenerateSession).not.toHaveBeenCalled();
       });
 
       it('should reject when session.regenerate fails', async () => {
-        req.session.save.mockImplementation((callback: Function) => callback(null));
         const error = new Error('regenerate error');
-        req.session.regenerate.mockImplementation((callback: Function) => callback(error));
+        jest.mocked(req.shims.regenerateSession).mockRejectedValue(error);
 
         await expect(logOut()).rejects.toThrow('regenerate error');
 
-        expect(req.session.save).toHaveBeenCalled();
-        expect(req.session.regenerate).toHaveBeenCalled();
+        expect(req.shims.saveSession).toHaveBeenCalled();
+        expect(req.shims.regenerateSession).toHaveBeenCalled();
       });
     });
 
     describe('setCookie', () => {
-      const res = {} as Response;
-      let req: any;
+      const res: RawResponseWithShims = {
+        ...defaultRes
+      };
+      let req: RawRequestWithShims;
 
       beforeEach(() => {
         req = {
+          ...defaultReq,
           session: {
             [SESSION_PASSPORT_KEY]: {
               user: { id: 1, username: 'testUser' }

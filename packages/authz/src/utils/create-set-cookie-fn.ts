@@ -1,10 +1,10 @@
-import type { Request, Response } from 'express';
+import type { RawRequestWithShims, RawResponseWithShims } from './adapter-shim';
 import { normalizedArray } from './generics';
-import type { CookieOptionsWithSecret } from './types';
 
+// @fastify/cookie does not use req.secret to encrypted.
 export const createSetCookieFn =
-  (req: Request, res: Response) =>
-  (name: string, value: string, options: CookieOptionsWithSecret = {}) => {
+  (req: RawRequestWithShims, res: RawResponseWithShims) =>
+  (name: string, value: string, options: Record<string, any> = {}) => {
     const { secret, signed: optSigned, ...restOpts } = options;
 
     const secrets = normalizedArray(secret) ?? [];
@@ -19,7 +19,7 @@ export const createSetCookieFn =
       req.secret = undefined;
     }
 
-    res.cookie(name, value, {
+    res.shims.setCookie(name, value, {
       signed,
       ...restOpts
     });

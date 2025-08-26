@@ -1,5 +1,3 @@
-import type { Request } from 'express';
-
 /**
  * Abstract base class for implementing custom authorization logic.
  *
@@ -28,7 +26,7 @@ export abstract class AuthzProviderClass<Payload, User> {
    * @param {Payload} payload - The payload to authenticate.
    * @returns {User | Promise<User>} The authenticated user, or a promise resolving to the user.
    */
-  abstract authenticate(payload: Payload, req?: Request): User | Promise<User>;
+  abstract authenticate(payload: Payload, req?: any): User | Promise<User>;
 
   /**
    * (**Optional**: Implement this method only if authorization is required.)

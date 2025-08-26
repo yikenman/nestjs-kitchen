@@ -1,9 +1,8 @@
 import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
-import type { Request } from 'express';
 import { getPassportProperty } from './utils';
 
 export const userDecoratorFactory = (_data: unknown, ctx: ExecutionContext) => {
-  const request: Request = ctx.switchToHttp().getRequest();
+  const request = ctx.switchToHttp().getRequest();
 
   return getPassportProperty<unknown>(request);
 };

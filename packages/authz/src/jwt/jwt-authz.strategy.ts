@@ -1,7 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { Inject, Injectable, mixin, type Type } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import type { Request } from 'express';
 import jwt from 'jsonwebtoken';
 import { Strategy } from 'passport-custom';
 import { AuthzProviderClass } from '../authz.provider';
@@ -29,7 +28,7 @@ export const createJwtStrategy = ([JWT_STRATEGY, AUTHZ_PROVIDER, ALS_PROVIDER]: 
       }
     }
 
-    async validate(req: Request) {
+    async validate(req: any) {
       const store = getAlsStore(this.als);
       const authOptions = store.authOptions;
 
@@ -92,7 +91,7 @@ export const createRefreshStrategy = ([JWT_REFRESH_STRATEGY, AUTHZ_PROVIDER, ALS
       }
     }
 
-    async validate(req: Request) {
+    async validate(req: any) {
       const store = getAlsStore(this.als);
       const authOptions = store.authOptions as SetRequired<JwtAuthzOptions, 'refresh'>;
 

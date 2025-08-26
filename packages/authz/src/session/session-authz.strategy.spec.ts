@@ -2,7 +2,6 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { mixin } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
-import type { Request } from 'express';
 import { Strategy } from 'passport-custom';
 import { AuthzProviderClass } from '../authz.provider';
 import { PASSPORT_PROPERTY, SESSION_PASSPORT_KEY } from '../constants';
@@ -120,7 +119,7 @@ describe('Session Authz Strategy', () => {
             user: mockPayload
           }
         }
-      } as unknown as Request;
+      };
 
       jest.mocked(mockAuthzProvider.authenticate).mockResolvedValue(mockUser as never);
 
@@ -138,7 +137,7 @@ describe('Session Authz Strategy', () => {
     });
 
     it('should return AuthzAnonymousError if session user is not found', async () => {
-      const req = { [PASSPORT_PROPERTY]: undefined } as unknown as Request;
+      const req = { [PASSPORT_PROPERTY]: undefined };
 
       // @ts-ignore
       const [user, error] = await sessionStrategy.validate(req);
@@ -159,7 +158,7 @@ describe('Session Authz Strategy', () => {
             user: mockPayload
           }
         }
-      } as unknown as Request;
+      };
 
       jest.mocked(mockAuthzProvider.authenticate).mockResolvedValue(mockUser as never);
 
@@ -181,7 +180,7 @@ describe('Session Authz Strategy', () => {
             user: mockPayload
           }
         }
-      } as unknown as Request;
+      };
 
       jest.mocked(mockAuthzProvider.authenticate).mockImplementation(
         jest.fn(() => {
@@ -206,7 +205,7 @@ describe('Session Authz Strategy', () => {
             user: mockPayload
           }
         }
-      } as unknown as Request;
+      };
 
       jest.mocked(mockAuthzProvider.authenticate).mockImplementation(
         jest.fn(() => {
