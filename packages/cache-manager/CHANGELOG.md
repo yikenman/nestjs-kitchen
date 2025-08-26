@@ -1,5 +1,11 @@
 # @nestjs-kitchen/cache-manager
 
+## 2.0.5
+
+### Patch Changes
+
+- 6067d7c: chore: remove nestjs v10 support
+
 ## 2.0.4
 
 ### Patch Changes

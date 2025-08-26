@@ -1,5 +1,13 @@
 # @nestjs-kitchen/connextion-presto
 
+## 2.0.8
+
+### Patch Changes
+
+- 6067d7c: chore: remove nestjs v10 support
+- Updated dependencies [6067d7c]
+  - @nestjs-kitchen/connextion@2.0.7
+
 ## 2.0.7
 
 ### Patch Changes

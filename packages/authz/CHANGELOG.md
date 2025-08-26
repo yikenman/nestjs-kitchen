@@ -1,5 +1,17 @@
 # @nestjs-kitchen/authz
 
+## 3.1.0
+
+### Minor Changes
+
+- 6067d7c: feat: support Fastify
+
+### Patch Changes
+
+- 6067d7c: chore: remove nestjs v10 support
+- 6067d7c: docs: update
+- 6067d7c: chore: bump version
+
 ## 3.0.1
 
 ### Patch Changes

@@ -2,7 +2,7 @@
   "name": "@nestjs-kitchen/authz",
   "private": false,
   "description": "Simplest authentication & authorization module in NextJS",
-  "version": "3.0.1",
+  "version": "3.1.0",
   "homepage": "https://github.com/yikenman/nestjs-kitchen",
   "repository": "https://github.com/yikenman/nestjs-kitchen",
   "author": "yikenman",
