@@ -1,10 +1,10 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { ExecutionContext, mixin } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { AuthGuard } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthzProviderClass } from '../authz.provider';
-import { AuthzAnonymousError } from '../errors';
+import { PASSPORT_PROPERTY, SESSION_PASSPORT_KEY } from '../constants';
+import { AuthzAnonymousError, AuthzError, AuthzVerificationError } from '../errors';
 import {
   type AuthzMetaParams,
   getAllowAnonymous,
@@ -15,8 +15,16 @@ import {
 import { createSessionAuthzGuard } from './session-authz.guard';
 import type { SessionAuthzOptions } from './session-authz.interface';
 
-const user = { id: 1 };
-const mockedRequest = { user };
+const mockPayload = { userId: 1 };
+const user = { id: 1, name: 'Test User' };
+const mockedRequest = {
+  [PASSPORT_PROPERTY]: undefined,
+  session: {
+    [SESSION_PASSPORT_KEY]: {
+      user: mockPayload
+    }
+  }
+};
 
 // Mock ExecutionContext helper
 function createMockExecutionContext(): ExecutionContext {
@@ -39,14 +47,6 @@ jest.mock('@nestjs/common', () => {
   };
 });
 
-jest.mock('@nestjs/passport', () => {
-  const actual = jest.requireActual('@nestjs/passport');
-  return {
-    ...actual,
-    AuthGuard: jest.fn(actual.AuthGuard)
-  };
-});
-
 jest.mock('../utils', () => {
   const actual = jest.requireActual('../utils');
   return {
@@ -64,13 +64,11 @@ beforeEach(() => {
 });
 
 describe('Session Authz Guard', () => {
-  const SESSION_STRATEGY = 'SESSION_STRATEGY';
   const AUTHZ_PROVIDER = 'AUTHZ_PROVIDER';
   const SESSION_AUTHZ_OPTIONS = 'SESSION_AUTHZ_OPTIONS';
   const ALS_PROVIDER = 'ALS_PROVIDER';
   const SESSION_META_KEY = 'SESSION_META_KEY';
 
-  let mockSuperCanActivate: jest.SpyInstance;
   let store: Record<string, any>;
 
   let sessionAuthzGuard: InstanceType<ReturnType<typeof createSessionAuthzGuard>>;
@@ -80,17 +78,14 @@ describe('Session Authz Guard', () => {
   let sessionAuthzOptions: SessionAuthzOptions;
 
   beforeEach(async () => {
-    jest.mocked(AuthGuard).mockImplementation((...rest: any[]) => {
-      const baseCls = jest.requireActual('@nestjs/passport').AuthGuard(...rest);
-      mockSuperCanActivate = jest.spyOn(baseCls.prototype, 'canActivate').mockResolvedValue(true);
-      return baseCls;
-    });
-
     store = { user, allowAnonymous: undefined, guardResult: undefined };
     jest.mocked(getAlsStore).mockReturnValue(store);
 
     reflector = new Reflector();
-    mockAuthzProvider = { authorize: jest.fn().mockResolvedValue(true) };
+    mockAuthzProvider = {
+      authorize: jest.fn().mockResolvedValue(true),
+      authenticate: jest.fn().mockResolvedValue(user)
+    };
     als = new AsyncLocalStorage();
     sessionAuthzOptions = {
       session: {
@@ -101,7 +96,6 @@ describe('Session Authz Guard', () => {
     } as unknown as SessionAuthzOptions;
 
     const SessionAuthzGuard = createSessionAuthzGuard([
-      SESSION_STRATEGY,
       AUTHZ_PROVIDER,
       SESSION_AUTHZ_OPTIONS,
       ALS_PROVIDER,
@@ -124,32 +118,19 @@ describe('Session Authz Guard', () => {
     expect(mixin).toHaveBeenCalledTimes(1);
   });
 
-  describe('constructor', () => {
-    it('should return an instance', () => {
-      expect(AuthGuard).toHaveBeenCalledTimes(1);
-      expect(AuthGuard).toHaveBeenCalledWith(SESSION_STRATEGY);
+  it('should throw error if AuthzProvider.authenticate is undefined', () => {
+    const SessionAuthzGuard = createSessionAuthzGuard([
+      AUTHZ_PROVIDER,
+      SESSION_AUTHZ_OPTIONS,
+      ALS_PROVIDER,
+      SESSION_META_KEY
+    ]);
+    // @ts-ignore
+    mockAuthzProvider.authenticate = undefined;
 
-      expect(sessionAuthzGuard).toBeInstanceOf(jest.mocked(AuthGuard).mock.results[0].value);
-    });
-  });
-
-  describe('handleRequest', () => {
-    it('should return passport options', async () => {
-      expect(sessionAuthzGuard.getAuthenticateOptions()).toEqual({
-        property: sessionAuthzOptions.passportProperty,
-        session: false
-      });
-    });
-  });
-
-  describe('getAuthenticateOptions', () => {
-    it('should return property & sessionsession', async () => {
-      const result = sessionAuthzGuard.getAuthenticateOptions();
-      expect(result).toEqual({
-        property: sessionAuthzOptions.passportProperty,
-        session: false
-      });
-    });
+    expect(() => {
+      new SessionAuthzGuard(reflector, mockAuthzProvider, sessionAuthzOptions, als);
+    }).toThrow(AuthzError);
   });
 
   describe('handleRequest', () => {
@@ -207,7 +188,7 @@ describe('Session Authz Guard', () => {
 
       const result = await sessionAuthzGuard.canActivate(context);
 
-      expect(getAlsStore).toHaveBeenCalledTimes(1);
+      expect(getAlsStore).toHaveBeenCalledTimes(3);
       expect(getAlsStore).toHaveBeenCalledWith(als);
 
       expect(mockedGetAll).toHaveBeenCalledTimes(1);
@@ -225,9 +206,6 @@ describe('Session Authz Guard', () => {
       });
 
       expect(store.allowAnonymous).toEqual(jest.mocked(getAllowAnonymous).mock.results[0].value);
-
-      expect(mockSuperCanActivate).toHaveBeenCalledTimes(1);
-      expect(mockSuperCanActivate).toHaveBeenCalledWith(context);
 
       expect(getPassportProperty).toHaveBeenCalledTimes(1);
       expect(getPassportProperty).toHaveBeenCalledWith(mockedRequest);
@@ -276,7 +254,6 @@ describe('Session Authz Guard', () => {
       expect(mockedGetAll).not.toHaveBeenCalled();
       expect(getContextAuthzMetaParamsList).not.toHaveBeenCalled();
       expect(getAllowAnonymous).not.toHaveBeenCalled();
-      expect(mockSuperCanActivate).not.toHaveBeenCalled();
       expect(getPassportProperty).not.toHaveBeenCalled();
       expect(mockAuthzProvider.authorize).not.toHaveBeenCalled();
 
@@ -312,9 +289,6 @@ describe('Session Authz Guard', () => {
 
       expect(store.allowAnonymous).toEqual(jest.mocked(getAllowAnonymous).mock.results[0].value);
 
-      expect(mockSuperCanActivate).toHaveBeenCalledTimes(1);
-      expect(mockSuperCanActivate).toHaveBeenCalledWith(context);
-
       expect(getPassportProperty).toHaveBeenCalledTimes(1);
       expect(getPassportProperty).toHaveBeenCalledWith(mockedRequest);
 
@@ -346,7 +320,6 @@ describe('Session Authz Guard', () => {
 
       expect(getContextAuthzMetaParamsList).not.toHaveBeenCalled();
       expect(getAllowAnonymous).not.toHaveBeenCalled();
-      expect(mockSuperCanActivate).not.toHaveBeenCalled();
       expect(getPassportProperty).not.toHaveBeenCalled();
       expect(mockAuthzProvider.authorize).not.toHaveBeenCalled();
 
@@ -438,6 +411,116 @@ describe('Session Authz Guard', () => {
 
       expect(store.guardResult).toBeUndefined();
       expect(result).toBe(true);
+    });
+  });
+
+  describe('validate', () => {
+    it('should return user on successful validation', async () => {
+      const mockPayload = { userId: 1 };
+      const mockUser = { id: 1, name: 'Test User' };
+      const req = {
+        [PASSPORT_PROPERTY]: undefined,
+        session: {
+          [SESSION_PASSPORT_KEY]: {
+            user: mockPayload
+          }
+        }
+      };
+
+      jest.mocked(mockAuthzProvider.authenticate!).mockResolvedValue(mockUser as never);
+
+      const user = await sessionAuthzGuard.validate(req);
+
+      expect(mockAuthzProvider.authenticate).toHaveBeenCalledTimes(1);
+      expect(mockAuthzProvider.authenticate).toHaveBeenCalledWith(mockPayload, req);
+
+      expect(getAlsStore).toHaveBeenCalledTimes(1);
+      expect(getAlsStore).toHaveBeenCalledWith(als);
+
+      expect(req[PASSPORT_PROPERTY]).toEqual(sessionAuthzOptions.passportProperty);
+      expect(store.user).toEqual(mockUser);
+      expect(user).toEqual([mockUser]);
+    });
+
+    it('should return AuthzAnonymousError if session user is not found', async () => {
+      const req = { [PASSPORT_PROPERTY]: undefined };
+
+      const [user, error] = await sessionAuthzGuard.validate(req);
+
+      expect(mockAuthzProvider.authenticate).not.toHaveBeenCalled();
+
+      expect(user).toBeNull();
+      expect(error).toBeInstanceOf(AuthzAnonymousError);
+    });
+
+    it('should return AuthzAnonymousError if AuthzProvider.authenticate return null', async () => {
+      const mockPayload = { userId: 1 };
+      const mockUser = null;
+      const req = {
+        [PASSPORT_PROPERTY]: undefined,
+        session: {
+          [SESSION_PASSPORT_KEY]: {
+            user: mockPayload
+          }
+        }
+      };
+
+      jest.mocked(mockAuthzProvider.authenticate!).mockResolvedValue(mockUser as never);
+
+      const [user, error] = await sessionAuthzGuard.validate(req);
+
+      expect(user).toBeNull();
+      expect(error).toBeInstanceOf(AuthzAnonymousError);
+
+      expect(store.user).toEqual(mockUser);
+    });
+
+    it('should return AuthzVerificationError if AuthzProvider.authenticate throws Error', async () => {
+      const mockPayload = { userId: 1 };
+      const req = {
+        [PASSPORT_PROPERTY]: undefined,
+        session: {
+          [SESSION_PASSPORT_KEY]: {
+            user: mockPayload
+          }
+        }
+      };
+
+      jest.mocked(mockAuthzProvider.authenticate!).mockImplementation(
+        jest.fn(() => {
+          throw new Error('Verification failed');
+        })
+      );
+
+      const [user, error] = await sessionAuthzGuard.validate(req);
+
+      expect(user).toBeNull();
+      expect(error).toBeInstanceOf(AuthzVerificationError);
+      expect(error.message).toBe(`Error: Verification failed`);
+    });
+
+    it('should return AuthzVerificationError if AuthzProvider.authenticate throws customr object', async () => {
+      const mockPayload = { userId: 1 };
+      const req = {
+        [PASSPORT_PROPERTY]: undefined,
+        session: {
+          [SESSION_PASSPORT_KEY]: {
+            user: mockPayload
+          }
+        }
+      };
+
+      jest.mocked(mockAuthzProvider.authenticate!).mockImplementation(
+        jest.fn(() => {
+          throw `Error`;
+        })
+      );
+
+      const [user, error] = await sessionAuthzGuard.validate(req);
+
+      expect(user).toBeNull();
+      expect(error).toBeInstanceOf(AuthzVerificationError);
+      expect(error.message).toBe(`Error`);
     });
   });
 });

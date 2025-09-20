@@ -15,7 +15,6 @@ import { createSessionAuthzGuard } from './session-authz.guard';
 import { normalizedSessionAuthzModuleOptions } from './session-authz.interface';
 import { cereateSessionAuthzModule } from './session-authz.module';
 import { createSessionAuthzService } from './session-authz.service';
-import { createSessionAuthzStrategy } from './session-authz.strategy';
 import { createSessionAuthzAlsMiddleware } from './session-authz-als.middleware';
 
 jest.mock('@nestjs/common', () => {
@@ -86,15 +85,6 @@ jest.mock('./session-authz.service', () => {
   };
 });
 
-jest.mock('./session-authz.strategy', () => {
-  const actual = jest.requireActual('./session-authz.strategy');
-
-  return {
-    ...actual,
-    createSessionAuthzStrategy: jest.fn(actual.createSessionAuthzStrategy)
-  };
-});
-
 interface Payload {
   payloadId1: string;
 }
@@ -132,9 +122,6 @@ describe('Session Authz Module', () => {
 
       const id = `${PREFIX}${jest.mocked(uid).mock.results[0].value}`;
 
-      // strategy tokens
-      const SESSION_STRATEGY = `${id}_SESSION_STRATEGY`;
-
       // provider tokens
       const AUTHZ_PROVIDER = `${id}_AUTHZ_PROVIDER`;
       const ALS_PROVIDER = `${id}_ALS_PROVIDER`;
@@ -142,9 +129,6 @@ describe('Session Authz Module', () => {
 
       // meta keys
       const SESSION_META_KEY = `${id}_SESSION_META_KEY`;
-
-      expect(createSessionAuthzStrategy).toHaveBeenCalledTimes(1);
-      expect(createSessionAuthzStrategy).toHaveBeenCalledWith([SESSION_STRATEGY, AUTHZ_PROVIDER, ALS_PROVIDER]);
 
       expect(createSessionAuthzService).toHaveBeenCalledTimes(1);
       expect(createSessionAuthzService).toHaveBeenCalledWith([AUTHZ_PROVIDER, ALS_PROVIDER]);
@@ -154,7 +138,6 @@ describe('Session Authz Module', () => {
 
       expect(createSessionAuthzGuard).toHaveBeenCalledTimes(1);
       expect(createSessionAuthzGuard).toHaveBeenCalledWith([
-        SESSION_STRATEGY,
         AUTHZ_PROVIDER,
         SESSION_AUTHZ_OPTIONS,
         ALS_PROVIDER,
@@ -354,20 +337,8 @@ describe('Session Authz Module', () => {
         expect(sessionAuthzOptions).toEqual(jest.mocked(normalizedSessionAuthzModuleOptions).mock.results[0].value);
       });
 
-      it('should provide SessionStrategy', () => {
-        const sessionStrategy = module.get(jest.mocked(createSessionAuthzStrategy).mock.results[0].value);
-
-        expect(sessionStrategy).toBeDefined();
-      });
-
       it('should call mergeDynamicModuleConfigs', () => {
         expect(mergeDynamicModuleConfigs).toHaveBeenCalledTimes(2);
-      });
-
-      it('should only provide SessionStrategy once', () => {
-        const secondCalled = AuthzModule.register(mockSessionAuthzOptions);
-
-        expect(secondCalled.providers).not.toContain(jest.mocked(createSessionAuthzStrategy).mock.results[0].value);
       });
 
       it('should call createOnceAdapterShimProvider', () => {
@@ -432,25 +403,8 @@ describe('Session Authz Module', () => {
         expect(sessionAuthzOptions).toEqual(jest.mocked(normalizedSessionAuthzModuleOptions).mock.results[0].value);
       });
 
-      it('should provide SessionStrategy', () => {
-        const sessionStrategy = module.get(jest.mocked(createSessionAuthzStrategy).mock.results[0].value);
-
-        expect(sessionStrategy).toBeDefined();
-      });
-
       it('should call mergeDynamicModuleConfigs', () => {
         expect(mergeDynamicModuleConfigs).toHaveBeenCalledTimes(2);
-      });
-
-      it('should only provide SessionStrategy once', () => {
-        const secondCalled = AuthzModule.registerAsync({
-          routes: '/path-a',
-          useFactory: () => {
-            return mockSessionAuthzOptions;
-          }
-        });
-
-        expect(secondCalled.providers).not.toContain(jest.mocked(createSessionAuthzStrategy).mock.results[0].value);
       });
 
       it('should call createOnceAdapterShimProvider', () => {

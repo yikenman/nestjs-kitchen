@@ -42,7 +42,6 @@ import {
   normalizedJwtAuthzModuleOptions
 } from './jwt-authz.interface';
 import { createJwtAuthzService } from './jwt-authz.service';
-import { createJwtStrategy, createRefreshStrategy } from './jwt-authz.strategy';
 import { createJwtAuthzAlsMiddleware, type JwtAlsType } from './jwt-authz-als.middleware';
 
 const store: {
@@ -121,10 +120,6 @@ export const createJwtAuthzModule = <P, U, T extends AuthzProviderClass<P, U>>(
   // prevent token overriding
   const id = `${PREFIX}${uid()}`;
 
-  // strategy tokens
-  const JWT_STRATEGY = `${id}_JWT_STRATEGY`;
-  const JWT_REFRESH_STRATEGY = `${id}_REFRESH_STRATEGY`;
-
   // provider tokens
   const AUTHZ_PROVIDER = `${id}_AUTHZ_PROVIDER`;
   const ALS_PROVIDER = `${id}_ALS_PROVIDER`;
@@ -136,22 +131,12 @@ export const createJwtAuthzModule = <P, U, T extends AuthzProviderClass<P, U>>(
 
   // providers
   const JwtAuthzService = createJwtAuthzService<P, U>([AUTHZ_PROVIDER, JWT_AUTHZ_OPTIONS, ALS_PROVIDER]);
-  const JwtAuthzAlsMiddleware = createJwtAuthzAlsMiddleware([ALS_PROVIDER, JWT_AUTHZ_OPTIONS]);
+  const JwtAuthzAlsMiddleware = createJwtAuthzAlsMiddleware([ALS_PROVIDER]);
   const als = new AsyncLocalStorage();
 
-  // strategy
-  const JwtStrategy = createJwtStrategy([JWT_STRATEGY, AUTHZ_PROVIDER, ALS_PROVIDER]);
-  const RefreshStrategy = createRefreshStrategy([JWT_REFRESH_STRATEGY, AUTHZ_PROVIDER, ALS_PROVIDER]);
-  // each strategy can be only registered once in passport.
-  // no need to provide multiple times as
-  //  1. they use the same ALS and authzProvider instance.
-  //  2. guard use strategy through passport via strategy name.
-  let isStrategyInited = false;
-
   // guards
-  const RefreshAuthzGuard = createJwtRefreshAuthzGuard([JWT_REFRESH_STRATEGY, JWT_AUTHZ_OPTIONS]);
+  const RefreshAuthzGuard = createJwtRefreshAuthzGuard([JWT_AUTHZ_OPTIONS, AUTHZ_PROVIDER, ALS_PROVIDER]);
   const JwtAuthzGuard = createJwtAuthzGuard([
-    JWT_STRATEGY,
     AUTHZ_PROVIDER,
     JWT_AUTHZ_OPTIONS,
     ALS_PROVIDER,
@@ -267,13 +252,11 @@ export const createJwtAuthzModule = <P, U, T extends AuthzProviderClass<P, U>>(
           provide: ALS_PROVIDER,
           useValue: als
         },
-        ...(!isStrategyInited ? [JwtStrategy, RefreshStrategy] : []),
         JwtAuthzService
       ],
       exports: [AUTHZ_PROVIDER, ALS_PROVIDER, JWT_AUTHZ_OPTIONS, JwtAuthzService]
     };
 
-    isStrategyInited = true;
     return configs;
   };
 

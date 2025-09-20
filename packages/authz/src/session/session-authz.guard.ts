@@ -1,9 +1,9 @@
 import { CanActivate, ExecutionContext, Inject, mixin, type Type } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { AuthGuard } from '@nestjs/passport';
 import type { AsyncLocalStorage } from 'async_hooks';
 import { AuthzProviderClass } from '../authz.provider';
-import { AuthzAnonymousError, AuthzError } from '../errors';
+import { PASSPORT_PROPERTY, SESSION_PASSPORT_KEY } from '../constants';
+import { AuthzAnonymousError, AuthzError, AuthzVerificationError } from '../errors';
 import {
   type AuthzMetaParams,
   getAllowAnonymous,
@@ -17,14 +17,13 @@ import {
 import type { SessionAuthzOptions } from './session-authz.interface';
 import type { SessionAlsType } from './session-authz-als.middleware';
 
-export const createSessionAuthzGuard = ([
-  SESSION_STRATEGY,
-  AUTHZ_PROVIDER,
-  SESSION_AUTHZ_OPTIONS,
-  ALS_PROVIDER,
-  SESSION_META_KEY
-]: [string, any, any, any, any]) => {
-  class SessionAuthzGuard extends AuthGuard(SESSION_STRATEGY) implements CanActivate {
+export const createSessionAuthzGuard = ([AUTHZ_PROVIDER, SESSION_AUTHZ_OPTIONS, ALS_PROVIDER, SESSION_META_KEY]: [
+  any,
+  any,
+  any,
+  any
+]) => {
+  class SessionAuthzGuard implements CanActivate {
     constructor(
       readonly reflector: Reflector,
       @Inject(AUTHZ_PROVIDER)
@@ -34,14 +33,11 @@ export const createSessionAuthzGuard = ([
       @Inject(ALS_PROVIDER)
       readonly als: AsyncLocalStorage<SessionAlsType<unknown, unknown>>
     ) {
-      super();
-    }
-
-    getAuthenticateOptions() {
-      return {
-        property: this.sessionAuthzOptions.passportProperty,
-        session: false
-      };
+      if (typeof this.authzProvider.authenticate !== 'function') {
+        throw new AuthzError(
+          `InternalError: Method 'authenticate' from abstract class 'AuthzProvider' must be implemented.`
+        );
+      }
     }
 
     /**
@@ -98,7 +94,7 @@ export const createSessionAuthzGuard = ([
         defaultAllowAnonymous: this.sessionAuthzOptions.defaultAllowAnonymous
       });
 
-      await super.canActivate(context);
+      req[this.sessionAuthzOptions.passportProperty] = this.handleRequest(undefined, ...(await this.validate(req)));
 
       // will be null if allowAnonymous=true.
       const user = getPassportProperty(req);
@@ -113,6 +109,39 @@ export const createSessionAuthzGuard = ([
       }
 
       return true;
+    }
+
+    async validate(req: any): Promise<[any, any?]> {
+      const store = getAlsStore(this.als);
+      const authOptions = this.sessionAuthzOptions;
+
+      req[PASSPORT_PROPERTY] = authOptions.passportProperty;
+
+      const payload = (req?.session as { [SESSION_PASSPORT_KEY]?: { user?: unknown } })?.[SESSION_PASSPORT_KEY]?.user;
+      if (!payload) {
+        return [null, new AuthzAnonymousError('AnonymousError: Cannnot find session.')];
+      }
+
+      let user: unknown = undefined;
+
+      try {
+        user = await this.authzProvider.authenticate(payload, req);
+      } catch (error) {
+        return [
+          null,
+          error instanceof Error
+            ? new AuthzVerificationError(`${error.name}: ${error.message}`, error)
+            : new AuthzVerificationError(`${error}`)
+        ];
+      }
+
+      store.user = user;
+
+      if (!user) {
+        return [null, new AuthzAnonymousError('AnonymousError: Cannnot find user.')];
+      }
+
+      return [user];
     }
   }
 

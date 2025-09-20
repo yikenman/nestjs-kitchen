@@ -41,7 +41,6 @@ import {
   type SessionAuthzOptions
 } from './session-authz.interface';
 import { createSessionAuthzService } from './session-authz.service';
-import { createSessionAuthzStrategy } from './session-authz.strategy';
 import { createSessionAuthzAlsMiddleware, type SessionAlsType } from './session-authz-als.middleware';
 
 const store: Record<any, number> = {
@@ -117,9 +116,6 @@ export const cereateSessionAuthzModule = <P, U, T extends AuthzProviderClass<P, 
 ) => {
   const id = `${PREFIX}${uid()}`;
 
-  // strategy tokens
-  const SESSION_STRATEGY = `${id}_SESSION_STRATEGY`;
-
   // provider tokens
   const AUTHZ_PROVIDER = `${id}_AUTHZ_PROVIDER`;
   const ALS_PROVIDER = `${id}_ALS_PROVIDER`;
@@ -128,22 +124,13 @@ export const cereateSessionAuthzModule = <P, U, T extends AuthzProviderClass<P, 
   // meta keys
   const SESSION_META_KEY = `${id}_SESSION_META_KEY`;
 
-  // strategies
-  const SessionAuthzStrategy = createSessionAuthzStrategy([SESSION_STRATEGY, AUTHZ_PROVIDER, ALS_PROVIDER]);
-
   // providers
   const SessionAuthzService = createSessionAuthzService<P, U>([AUTHZ_PROVIDER, ALS_PROVIDER]);
   const SessionAuthzAlsMiddleware = createSessionAuthzAlsMiddleware([ALS_PROVIDER, SESSION_AUTHZ_OPTIONS]);
   const als = new AsyncLocalStorage();
-  // each strategy can be only registered once in passport.
-  // no need to provide multiple times as
-  //  1. they use the same ALS and authzProvider instance.
-  //  2. guard use strategy through passport via strategy name.
-  let isStrategyInited = false;
 
   // guards
   const SessionAuthzGuard = createSessionAuthzGuard([
-    SESSION_STRATEGY,
     AUTHZ_PROVIDER,
     SESSION_AUTHZ_OPTIONS,
     ALS_PROVIDER,
@@ -231,13 +218,11 @@ export const cereateSessionAuthzModule = <P, U, T extends AuthzProviderClass<P, 
           provide: ALS_PROVIDER,
           useValue: als
         },
-        ...(!isStrategyInited ? [SessionAuthzStrategy] : []),
         SessionAuthzService
       ],
       exports: [AUTHZ_PROVIDER, ALS_PROVIDER, SESSION_AUTHZ_OPTIONS, SessionAuthzService]
     };
 
-    isStrategyInited = true;
     return configs;
   };
 

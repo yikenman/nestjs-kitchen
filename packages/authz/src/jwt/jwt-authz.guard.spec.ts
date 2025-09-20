@@ -1,17 +1,20 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { ExecutionContext, mixin } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { AuthGuard } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
+import jwt from 'jsonwebtoken';
 import { AuthzProviderClass } from '../authz.provider';
-import { AuthzAnonymousError } from '../errors';
+import { JwtValidationType, PASSPORT_PROPERTY } from '../constants';
+import { AuthzAnonymousError, AuthzError, AuthzVerificationError } from '../errors';
 import {
   type AuthzMetaParams,
+  decodeMsgpackrString,
   getAllowAnonymous,
   getAlsStore,
   getContextAuthzMetaParamsList,
   getPassportProperty,
-  normalizedArray
+  normalizedArray,
+  type SetRequired
 } from '../utils';
 import { createJwtAuthzGuard, createJwtRefreshAuthzGuard } from './jwt-authz.guard';
 import type { JwtAuthzOptions } from './jwt-authz.interface';
@@ -40,11 +43,11 @@ jest.mock('@nestjs/common', () => {
   };
 });
 
-jest.mock('@nestjs/passport', () => {
-  const actual = jest.requireActual('@nestjs/passport');
+jest.mock('jsonwebtoken', () => {
+  const actual = jest.requireActual('jsonwebtoken');
   return {
     ...actual,
-    AuthGuard: jest.fn(actual.AuthGuard)
+    verify: jest.fn()
   };
 });
 
@@ -56,7 +59,8 @@ jest.mock('../utils', () => {
     getContextAuthzMetaParamsList: jest.fn(actual.getContextAuthzMetaParamsList),
     getAlsStore: jest.fn(actual.getAlsStore),
     getAllowAnonymous: jest.fn(actual.getAllowAnonymous),
-    normalizedArray: jest.fn(actual.normalizedArray)
+    normalizedArray: jest.fn(actual.normalizedArray),
+    decodeMsgpackrString: jest.fn(actual.decodeMsgpackrString)
   };
 });
 
@@ -66,43 +70,45 @@ beforeEach(() => {
 });
 
 describe('Jwt Authz Guard', () => {
-  const JWT_STRATEGY = 'JWT_STRATEGY';
   const AUTHZ_PROVIDER = 'AUTHZ_PROVIDER';
   const JWT_AUTHZ_OPTIONS = 'JWT_AUTHZ_OPTIONS';
   const ALS_PROVIDER = 'ALS_PROVIDER';
   const JWT_META_KEY = 'JWT_META_KEY';
   const JWT_REFRESH_META_KEY = 'JWT_REFRESH_META_KEY';
 
-  let mockSuperCanActivate: jest.SpyInstance;
+  const testToken = 'test-token';
+  const testSecret = 'test-secret';
+
   let store: Record<string, any>;
 
   let jwtAuthzGuard: InstanceType<ReturnType<typeof createJwtAuthzGuard>>;
   let reflector: Reflector;
-  let mockAuthzProvider: Partial<AuthzProviderClass<unknown, unknown>>;
+  let mockAuthzProvider: AuthzProviderClass<unknown, unknown>;
   let als: AsyncLocalStorage<any>;
   let jwtAuthzOptions: JwtAuthzOptions;
+  let mockJwtExtractor: ReturnType<typeof jest.fn>;
 
   beforeEach(async () => {
-    jest.mocked(AuthGuard).mockImplementation((...rest: any[]) => {
-      const baseCls = jest.requireActual('@nestjs/passport').AuthGuard(...rest);
-      mockSuperCanActivate = jest.spyOn(baseCls.prototype, 'canActivate').mockResolvedValue(true);
-      return baseCls;
-    });
-
     store = { user, allowAnonymous: undefined, guardResult: undefined };
     jest.mocked(getAlsStore).mockReturnValue(store);
 
     reflector = new Reflector();
-    mockAuthzProvider = { authorize: jest.fn().mockResolvedValue(true) };
+    // @ts-ignore
+    mockAuthzProvider = { authorize: jest.fn().mockResolvedValue(true), authenticate: jest.fn() };
     als = new AsyncLocalStorage();
+    mockJwtExtractor = jest.fn().mockReturnValue(testToken);
     jwtAuthzOptions = {
       defaultAllowAnonymous: true,
       passportProperty: 'property',
-      refresh: {}
+      refresh: {},
+      jwt: {
+        secretOrPublicKey: testSecret,
+        verify: {},
+        jwtFromRequest: [mockJwtExtractor]
+      }
     } as unknown as JwtAuthzOptions;
 
     const JwtAuthzGuard = createJwtAuthzGuard([
-      JWT_STRATEGY,
       AUTHZ_PROVIDER,
       JWT_AUTHZ_OPTIONS,
       ALS_PROVIDER,
@@ -126,32 +132,21 @@ describe('Jwt Authz Guard', () => {
     expect(mixin).toHaveBeenCalledTimes(1);
   });
 
-  describe('constructor', () => {
-    it('should return an instance', () => {
-      expect(AuthGuard).toHaveBeenCalledTimes(1);
-      expect(AuthGuard).toHaveBeenCalledWith(JWT_STRATEGY);
+  it('should throw error if AuthzProvider.authenticate is undefined', () => {
+    const JwtAuthzGuard = createJwtAuthzGuard([
+      AUTHZ_PROVIDER,
+      JWT_AUTHZ_OPTIONS,
+      ALS_PROVIDER,
+      JWT_META_KEY,
+      JWT_REFRESH_META_KEY
+    ]);
 
-      expect(jwtAuthzGuard).toBeInstanceOf(jest.mocked(AuthGuard).mock.results[0].value);
-    });
-  });
+    // @ts-ignore
+    mockAuthzProvider.authenticate = undefined;
 
-  describe('getAuthenticateOptions', () => {
-    it('should return property & sessionsession', async () => {
-      const result = jwtAuthzGuard.getAuthenticateOptions();
-      expect(result).toEqual({
-        property: jwtAuthzOptions.passportProperty,
-        session: false
-      });
-    });
-  });
-
-  describe('handleRequest', () => {
-    it('should return passport options', async () => {
-      expect(jwtAuthzGuard.getAuthenticateOptions()).toEqual({
-        property: jwtAuthzOptions.passportProperty,
-        session: false
-      });
-    });
+    expect(() => {
+      new JwtAuthzGuard(reflector, mockAuthzProvider, jwtAuthzOptions, als);
+    }).toThrow(AuthzError);
   });
 
   describe('handleRequest', () => {
@@ -195,6 +190,8 @@ describe('Jwt Authz Guard', () => {
       jwtAuthzOptions.defaultAllowAnonymous = false;
       jwtAuthzOptions.refresh = undefined;
 
+      const mockUser = { id: 1, name: 'Test User' };
+      const mockPayload = { userId: 1 };
       const contextParamsList = [{ metaData: 'META_DATA_1' }, { metaData: 'META_DATA_2' }] as AuthzMetaParams[];
 
       const mockedGetAll = jest.spyOn(reflector, 'getAll');
@@ -202,18 +199,18 @@ describe('Jwt Authz Guard', () => {
       mockedGetAll.mockReturnValueOnce([]);
       // JWT_META_KEY
       mockedGetAll.mockReturnValueOnce(contextParamsList);
-
       mockAuthzProvider.authorize = jest.fn().mockResolvedValue(true);
-
+      // @ts-ignore
+      jest.mocked(jwt.verify).mockReturnValue(mockPayload);
+      jest.mocked(mockAuthzProvider.authenticate!).mockResolvedValue(mockUser as never);
       jest.mocked(getAllowAnonymous).mockReturnValue(false);
-
       jest.mocked(getPassportProperty).mockReturnValue(user);
 
       const context = createMockExecutionContext();
 
       const result = await jwtAuthzGuard.canActivate(context);
 
-      expect(getAlsStore).toHaveBeenCalledTimes(1);
+      expect(getAlsStore).toHaveBeenCalledTimes(3);
       expect(getAlsStore).toHaveBeenCalledWith(als);
 
       expect(mockedGetAll).toHaveBeenCalledTimes(2);
@@ -237,9 +234,6 @@ describe('Jwt Authz Guard', () => {
 
       expect(store.allowAnonymous).toEqual(jest.mocked(getAllowAnonymous).mock.results[0].value);
 
-      expect(mockSuperCanActivate).toHaveBeenCalledTimes(1);
-      expect(mockSuperCanActivate).toHaveBeenCalledWith(context);
-
       expect(getPassportProperty).toHaveBeenCalledTimes(1);
       expect(getPassportProperty).toHaveBeenCalledWith(mockedRequest);
 
@@ -255,6 +249,8 @@ describe('Jwt Authz Guard', () => {
       jwtAuthzOptions.defaultAllowAnonymous = false;
       jwtAuthzOptions.refresh = undefined;
 
+      const mockUser = { id: 1, name: 'Test User' };
+      const mockPayload = { userId: 1 };
       const contextParamsList = [{ metaData: 'META_DATA_1' }, { metaData: 'META_DATA_2' }] as AuthzMetaParams[];
 
       const mockedGetAll = jest.spyOn(reflector, 'getAll');
@@ -262,11 +258,11 @@ describe('Jwt Authz Guard', () => {
       mockedGetAll.mockReturnValueOnce([]);
       // JWT_META_KEY
       mockedGetAll.mockReturnValueOnce(contextParamsList);
-
+      // @ts-ignore
+      jest.mocked(jwt.verify).mockReturnValue(mockPayload);
+      jest.mocked(mockAuthzProvider.authenticate!).mockResolvedValue(mockUser as never);
       mockAuthzProvider.authorize = jest.fn().mockResolvedValue(false);
-
       jest.mocked(getAllowAnonymous).mockReturnValue(false);
-
       jest.mocked(getPassportProperty).mockReturnValue(user);
 
       const context = createMockExecutionContext();
@@ -291,7 +287,6 @@ describe('Jwt Authz Guard', () => {
       expect(mockedGetAll).not.toHaveBeenCalled();
       expect(getContextAuthzMetaParamsList).not.toHaveBeenCalled();
       expect(getAllowAnonymous).not.toHaveBeenCalled();
-      expect(mockSuperCanActivate).not.toHaveBeenCalled();
       expect(getPassportProperty).not.toHaveBeenCalled();
       expect(mockAuthzProvider.authorize).not.toHaveBeenCalled();
 
@@ -314,7 +309,6 @@ describe('Jwt Authz Guard', () => {
 
       expect(getContextAuthzMetaParamsList).not.toHaveBeenCalled();
       expect(getAllowAnonymous).not.toHaveBeenCalled();
-      expect(mockSuperCanActivate).not.toHaveBeenCalled();
       expect(getPassportProperty).not.toHaveBeenCalled();
       expect(mockAuthzProvider.authorize).not.toHaveBeenCalled();
 
@@ -326,6 +320,8 @@ describe('Jwt Authz Guard', () => {
       jwtAuthzOptions.defaultAllowAnonymous = false;
       jwtAuthzOptions.refresh = undefined;
 
+      const mockUser = { id: 1, name: 'Test User' };
+      const mockPayload = { userId: 1 };
       const contextParamsList = [{ metaData: 'META_DATA_1' }, { metaData: 'META_DATA_2' }] as AuthzMetaParams[];
 
       const mockedGetAll = jest.spyOn(reflector, 'getAll');
@@ -333,11 +329,11 @@ describe('Jwt Authz Guard', () => {
       mockedGetAll.mockReturnValueOnce([true]);
       // JWT_META_KEY
       mockedGetAll.mockReturnValueOnce(contextParamsList);
-
+      // @ts-ignore
+      jest.mocked(jwt.verify).mockReturnValue(mockPayload);
+      jest.mocked(mockAuthzProvider.authenticate!).mockResolvedValue(mockUser as never);
       mockAuthzProvider.authorize = jest.fn().mockResolvedValue(true);
-
       jest.mocked(getAllowAnonymous).mockReturnValue(false);
-
       jest.mocked(getPassportProperty).mockReturnValue(user);
 
       const context = createMockExecutionContext();
@@ -352,20 +348,21 @@ describe('Jwt Authz Guard', () => {
       expect(result).toBe(true);
     });
 
-    it('should call super.canActivate if AuthzMetaParams is empty', async () => {
-      jwtAuthzOptions.defaultAllowAnonymous = false;
-      jwtAuthzOptions.refresh = undefined;
+    it('should skip authorize if AuthzMetaParams is empty', async () => {
+      const mockUser = { id: 1, name: 'Test User' };
+      const mockPayload = { userId: 1 };
+      const contextParamsList = [{ metaData: 'META_DATA_1' }, { metaData: 'META_DATA_2' }] as AuthzMetaParams[];
 
       const mockedGetAll = jest.spyOn(reflector, 'getAll');
       // JWT_REFRESH_META_KEY
       mockedGetAll.mockReturnValueOnce([]);
       // JWT_META_KEY
       mockedGetAll.mockReturnValueOnce([]);
-
+      // @ts-ignore
+      jest.mocked(jwt.verify).mockReturnValue(mockPayload);
+      jest.mocked(mockAuthzProvider.authenticate!).mockResolvedValue(mockUser as never);
       mockAuthzProvider.authorize = jest.fn().mockResolvedValue(true);
-
       jest.mocked(getAllowAnonymous).mockReturnValue(false);
-
       jest.mocked(getPassportProperty).mockReturnValue(user);
 
       const context = createMockExecutionContext();
@@ -384,9 +381,6 @@ describe('Jwt Authz Guard', () => {
       });
 
       expect(store.allowAnonymous).toEqual(jest.mocked(getAllowAnonymous).mock.results[0].value);
-
-      expect(mockSuperCanActivate).toHaveBeenCalledTimes(1);
-      expect(mockSuperCanActivate).toHaveBeenCalledWith(context);
 
       expect(getPassportProperty).toHaveBeenCalledTimes(1);
       expect(getPassportProperty).toHaveBeenCalledWith(mockedRequest);
@@ -424,7 +418,6 @@ describe('Jwt Authz Guard', () => {
 
       expect(getContextAuthzMetaParamsList).not.toHaveBeenCalled();
       expect(getAllowAnonymous).not.toHaveBeenCalled();
-      expect(mockSuperCanActivate).not.toHaveBeenCalled();
       expect(getPassportProperty).not.toHaveBeenCalled();
       expect(mockAuthzProvider.authorize).not.toHaveBeenCalled();
 
@@ -530,63 +523,200 @@ describe('Jwt Authz Guard', () => {
       expect(result).toBe(true);
     });
   });
+
+  describe('validate', () => {
+    it('should return user on successful validation', async () => {
+      const req = { [PASSPORT_PROPERTY]: undefined };
+      const mockPayload = { userId: 1 };
+      const mockUser = { id: 1, name: 'Test User' };
+
+      // @ts-ignore
+      jest.mocked(jwt.verify).mockReturnValue(mockPayload);
+      jest.mocked(mockAuthzProvider.authenticate).mockResolvedValue(mockUser as never);
+
+      const user = await jwtAuthzGuard.validate(req);
+
+      expect(getAlsStore).toHaveBeenCalledTimes(1);
+      expect(getAlsStore).toHaveBeenCalledWith(als);
+
+      expect(mockJwtExtractor).toHaveBeenCalledTimes(1);
+      expect(mockJwtExtractor).toHaveBeenCalledWith(req);
+
+      expect(jwt.verify).toHaveBeenCalledTimes(1);
+      expect(jwt.verify).toHaveBeenCalledWith('test-token', 'test-secret', jwtAuthzOptions.jwt.verify);
+
+      expect(mockAuthzProvider.authenticate).toHaveBeenCalledTimes(1);
+      expect(mockAuthzProvider.authenticate).toHaveBeenCalledWith(jest.mocked(jwt.verify).mock.results[0].value, req);
+
+      expect(req[PASSPORT_PROPERTY]).toEqual(jwtAuthzOptions.passportProperty);
+      expect(store.user).toEqual(mockUser);
+      expect(store.jwtVerifiedBy).toEqual(JwtValidationType.JWT);
+      expect(user).toEqual([mockUser]);
+    });
+
+    it('should throw an AuthzError if jwtAuthzOptions.jwt.verify is not defined', async () => {
+      // @ts-ignore
+      jwtAuthzOptions.jwt.verify = undefined;
+
+      const req = { [PASSPORT_PROPERTY]: undefined };
+
+      const [user, error] = await jwtAuthzGuard.validate(req);
+
+      expect(jwt.verify).not.toHaveBeenCalled();
+      expect(decodeMsgpackrString).not.toHaveBeenCalled();
+      expect(mockAuthzProvider.authenticate).not.toHaveBeenCalled();
+
+      expect(user).toBeNull();
+      expect(error).toBeInstanceOf(AuthzError);
+    });
+
+    it('should return AuthzAnonymousError if no token is provided', async () => {
+      const req = { [PASSPORT_PROPERTY]: undefined };
+
+      mockJwtExtractor.mockReturnValue(null);
+
+      const [user, error] = await jwtAuthzGuard.validate(req);
+
+      expect(jwt.verify).not.toHaveBeenCalled();
+      expect(decodeMsgpackrString).not.toHaveBeenCalled();
+      expect(mockAuthzProvider.authenticate).not.toHaveBeenCalled();
+
+      expect(user).toBeNull();
+      expect(error).toBeInstanceOf(AuthzAnonymousError);
+    });
+
+    it('should return AuthzAnonymousError if user is null', async () => {
+      const req = { [PASSPORT_PROPERTY]: undefined };
+      const mockPayload = { userId: 1 };
+      const mockUser = null;
+
+      // @ts-ignore
+      jest.mocked(jwt.verify).mockReturnValue(mockPayload);
+      jest.mocked(mockAuthzProvider.authenticate).mockResolvedValue(mockUser as never);
+
+      const [user, error] = await jwtAuthzGuard.validate(req);
+
+      expect(user).toBeNull();
+      expect(error).toBeInstanceOf(AuthzAnonymousError);
+    });
+
+    it('should return AuthzVerificationError if jwt.verify throws Error', async () => {
+      const req = { [PASSPORT_PROPERTY]: undefined };
+      jwt.verify = jest.fn(() => {
+        throw new Error('Verification failed');
+      });
+
+      const [user, error] = await jwtAuthzGuard.validate(req);
+
+      expect(user).toBeNull();
+      expect(error).toBeInstanceOf(AuthzVerificationError);
+      expect(error.message).toBe(`Error: Verification failed`);
+    });
+
+    it('should return AuthzVerificationError if jwt.verify throws customr object', async () => {
+      const req = { [PASSPORT_PROPERTY]: undefined };
+      jwt.verify = jest.fn(() => {
+        throw 'Error';
+      });
+
+      const [user, error] = await jwtAuthzGuard.validate(req);
+
+      expect(user).toBeNull();
+      expect(error).toBeInstanceOf(AuthzVerificationError);
+      expect(error.message).toBe(`Error`);
+    });
+
+    it('should return AuthzVerificationError if jwt.verify throws Error', async () => {
+      const req = { [PASSPORT_PROPERTY]: undefined };
+      jwt.verify = jest.fn(() => {
+        throw new Error('Verification failed');
+      });
+
+      const [user, error] = await jwtAuthzGuard.validate(req);
+
+      expect(user).toBeNull();
+      expect(error).toBeInstanceOf(AuthzVerificationError);
+      expect(error.message).toBe(`Error: Verification failed`);
+    });
+
+    it('should return AuthzVerificationError if AuthzProvider.authenticate throws Error', async () => {
+      const req = { [PASSPORT_PROPERTY]: undefined };
+      const mockPayload = { userId: 1 };
+
+      // @ts-ignore
+      jest.mocked(jwt.verify).mockReturnValue(mockPayload);
+      jest.mocked(mockAuthzProvider.authenticate).mockImplementation(
+        jest.fn(() => {
+          throw new Error('Verification failed');
+        })
+      );
+
+      const [user, error] = await jwtAuthzGuard.validate(req);
+
+      expect(user).toBeNull();
+      expect(error).toBeInstanceOf(AuthzVerificationError);
+      expect(error.message).toBe(`Error: Verification failed`);
+    });
+  });
 });
 
 describe('JwtRefreshAuthzGuard', () => {
-  const JWT_REFRESH_STRATEGY = 'JWT_REFRESH_STRATEGY';
   const JWT_AUTHZ_OPTIONS = 'JWT_AUTHZ_OPTIONS';
+  const AUTHZ_PROVIDER = 'AUTHZ_PROVIDER';
+  const ALS_PROVIDER = 'ALS_PROVIDER';
+  const testToken = 'test-token';
+  const testSecret = 'test-secret';
 
-  let mockSuperCanActivate: jest.SpyInstance;
   let jwtRefreshAuthzGuard: InstanceType<ReturnType<typeof createJwtRefreshAuthzGuard>>;
   let jwtAuthzOptions: JwtAuthzOptions;
+  let als: AsyncLocalStorage<any>;
+  let mockAuthzProvider: AuthzProviderClass<unknown, unknown>;
+  let mockJwtExtractor: ReturnType<typeof jest.fn>;
+  let store: Record<string, any>;
 
   beforeEach(async () => {
-    jest.mocked(AuthGuard).mockImplementation((...rest: any[]) => {
-      const baseCls = jest.requireActual('@nestjs/passport').AuthGuard(...rest);
-      mockSuperCanActivate = jest.spyOn(baseCls.prototype, 'canActivate').mockResolvedValue(true);
-      return baseCls;
-    });
+    // @ts-ignore
+    mockAuthzProvider = { authorize: jest.fn().mockResolvedValue(true), authenticate: jest.fn() };
+    mockJwtExtractor = jest.fn().mockReturnValue(testToken);
+    als = new AsyncLocalStorage();
 
     jwtAuthzOptions = {
-      defaultAllowAnonymous: true,
-      property: 'property',
-      refresh: {}
-    } as unknown as JwtAuthzOptions;
+      refresh: {
+        secretOrPublicKey: testSecret,
+        verify: {},
+        jwtFromRequest: [mockJwtExtractor]
+      },
+      passportProperty: 'uesr'
+    } as unknown as SetRequired<JwtAuthzOptions, 'refresh'>;
 
-    const JwtRefreshAuthzGuard = createJwtRefreshAuthzGuard([JWT_REFRESH_STRATEGY, JWT_AUTHZ_OPTIONS]);
+    store = {
+      user: undefined,
+      jwtVerifiedBy: undefined
+    };
+    jest.mocked(getAlsStore).mockReturnValue(store);
+
+    const JwtRefreshAuthzGuard = createJwtRefreshAuthzGuard([JWT_AUTHZ_OPTIONS, AUTHZ_PROVIDER, ALS_PROVIDER]);
     const module: TestingModule = await Test.createTestingModule({
-      providers: [JwtRefreshAuthzGuard, { provide: JWT_AUTHZ_OPTIONS, useValue: jwtAuthzOptions }]
+      providers: [
+        JwtRefreshAuthzGuard,
+        { provide: JWT_AUTHZ_OPTIONS, useValue: jwtAuthzOptions },
+        { provide: ALS_PROVIDER, useValue: als },
+        { provide: AUTHZ_PROVIDER, useValue: mockAuthzProvider }
+      ]
     }).compile();
 
     jwtRefreshAuthzGuard = module.get(JwtRefreshAuthzGuard);
   });
 
-  describe('constructor', () => {
-    it('should return an instance', () => {
-      expect(AuthGuard).toHaveBeenCalledTimes(1);
-      expect(AuthGuard).toHaveBeenCalledWith(JWT_REFRESH_STRATEGY);
+  it('should throw error if AuthzProvider.authenticate is undefined', () => {
+    const JwtRefreshAuthzGuard = createJwtRefreshAuthzGuard([JWT_AUTHZ_OPTIONS, AUTHZ_PROVIDER, ALS_PROVIDER]);
 
-      expect(jwtRefreshAuthzGuard).toBeInstanceOf(jest.mocked(AuthGuard).mock.results[0].value);
-    });
-  });
+    // @ts-ignore
+    mockAuthzProvider.authenticate = undefined;
 
-  describe('handleRequest', () => {
-    it('should return passport options', async () => {
-      expect(jwtRefreshAuthzGuard.getAuthenticateOptions()).toEqual({
-        property: jwtAuthzOptions.passportProperty,
-        session: false
-      });
-    });
-  });
-
-  describe('getAuthenticateOptions', () => {
-    it('should return property & sessionsession', async () => {
-      const result = jwtRefreshAuthzGuard.getAuthenticateOptions();
-      expect(result).toEqual({
-        property: jwtAuthzOptions.passportProperty,
-        session: false
-      });
-    });
+    expect(() => {
+      new JwtRefreshAuthzGuard(jwtAuthzOptions, mockAuthzProvider, als);
+    }).toThrow(AuthzError);
   });
 
   describe('handleRequest', () => {
@@ -600,6 +730,159 @@ describe('JwtRefreshAuthzGuard', () => {
     it('should ignore err parameter', async () => {
       const result = jwtRefreshAuthzGuard.handleRequest(new Error(), user, undefined);
       expect(result).toEqual(user);
+    });
+  });
+
+  describe('canActivate', () => {
+    it('should return true if validated', async () => {
+      const mockEncodedPayload = {
+        data: 'encoded string'
+      };
+      const mockPayload = { userId: 1 };
+      const mockUser = { id: 1, name: 'Test User' };
+
+      // @ts-ignore
+      jest.mocked(jwt.verify).mockReturnValue(mockEncodedPayload);
+      jest.mocked(decodeMsgpackrString).mockReturnValue(mockPayload);
+      jest.mocked(mockAuthzProvider.authenticate!).mockResolvedValue(mockUser as never);
+
+      const context = createMockExecutionContext();
+
+      const result = await jwtRefreshAuthzGuard.canActivate(context);
+
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('validate', () => {
+    it('should return user on successful validation', async () => {
+      const req = { [PASSPORT_PROPERTY]: undefined };
+      const mockEncodedPayload = {
+        data: 'encoded string'
+      };
+      const mockPayload = { userId: 1 };
+      const mockUser = { id: 1, name: 'Test User' };
+
+      // @ts-ignore
+      jest.mocked(jwt.verify).mockReturnValue(mockEncodedPayload);
+      jest.mocked(decodeMsgpackrString).mockReturnValue(mockPayload);
+      jest.mocked(mockAuthzProvider.authenticate).mockResolvedValue(mockUser as never);
+
+      const user = await jwtRefreshAuthzGuard.validate(req);
+
+      expect(getAlsStore).toHaveBeenCalledTimes(1);
+      expect(getAlsStore).toHaveBeenCalledWith(als);
+
+      expect(mockJwtExtractor).toHaveBeenCalledTimes(1);
+      expect(mockJwtExtractor).toHaveBeenCalledWith(req);
+
+      expect(jwt.verify).toHaveBeenCalledTimes(1);
+      expect(jwt.verify).toHaveBeenCalledWith('test-token', 'test-secret', jwtAuthzOptions.refresh!.verify);
+
+      expect(decodeMsgpackrString).toHaveBeenCalledTimes(1);
+      expect(decodeMsgpackrString).toHaveBeenCalledWith(mockEncodedPayload.data);
+
+      expect(mockAuthzProvider.authenticate).toHaveBeenCalledTimes(1);
+      expect(mockAuthzProvider.authenticate).toHaveBeenCalledWith(
+        jest.mocked(decodeMsgpackrString).mock.results[0].value,
+        req
+      );
+
+      expect(req[PASSPORT_PROPERTY]).toEqual(jwtAuthzOptions.passportProperty);
+      expect(store.user).toEqual(mockUser);
+      expect(store.jwtVerifiedBy).toEqual(JwtValidationType.REFRESH);
+      expect(user).toEqual([mockUser]);
+    });
+
+    it('should throw an AuthzError if jwtAuthzOptions.refresh.verify is not defined', async () => {
+      // @ts-ignore
+      jwtAuthzOptions.refresh.verify = undefined;
+
+      const req = { [PASSPORT_PROPERTY]: undefined };
+
+      const [user, error] = await jwtRefreshAuthzGuard.validate(req);
+
+      expect(jwt.verify).not.toHaveBeenCalled();
+      expect(decodeMsgpackrString).not.toHaveBeenCalled();
+      expect(mockAuthzProvider.authenticate).not.toHaveBeenCalled();
+
+      expect(user).toBeNull();
+      expect(error).toBeInstanceOf(AuthzError);
+    });
+
+    it('should return AuthzAnonymousError if no token is provided', async () => {
+      const req = { [PASSPORT_PROPERTY]: undefined };
+
+      mockJwtExtractor.mockReturnValue(null);
+
+      const [user, error] = await jwtRefreshAuthzGuard.validate(req);
+
+      expect(jwt.verify).not.toHaveBeenCalled();
+      expect(decodeMsgpackrString).not.toHaveBeenCalled();
+      expect(mockAuthzProvider.authenticate).not.toHaveBeenCalled();
+
+      expect(user).toBeNull();
+      expect(error).toBeInstanceOf(AuthzAnonymousError);
+    });
+
+    it('should return AuthzAnonymousError if user is null', async () => {
+      const req = { [PASSPORT_PROPERTY]: undefined };
+      const mockPayload = { userId: 1 };
+      const mockUser = null;
+
+      // @ts-ignore
+      jest.mocked(jwt.verify).mockReturnValue(mockPayload);
+      jest.mocked(mockAuthzProvider.authenticate).mockResolvedValue(mockUser as never);
+
+      const [user, error] = await jwtRefreshAuthzGuard.validate(req);
+
+      expect(user).toBeNull();
+      expect(error).toBeInstanceOf(AuthzAnonymousError);
+    });
+
+    it('should return AuthzVerificationError if jwt.verify throws Error', async () => {
+      const req = { [PASSPORT_PROPERTY]: undefined };
+      jwt.verify = jest.fn(() => {
+        throw new Error('Verification failed');
+      });
+
+      const [user, error] = await jwtRefreshAuthzGuard.validate(req);
+
+      expect(user).toBeNull();
+      expect(error).toBeInstanceOf(AuthzVerificationError);
+      expect(error.message).toBe(`Error: Verification failed`);
+    });
+
+    it('should return AuthzVerificationError if jwt.verify throws customr object', async () => {
+      const req = { [PASSPORT_PROPERTY]: undefined };
+      jwt.verify = jest.fn(() => {
+        throw 'Error';
+      });
+
+      const [user, error] = await jwtRefreshAuthzGuard.validate(req);
+
+      expect(user).toBeNull();
+      expect(error).toBeInstanceOf(AuthzVerificationError);
+      expect(error.message).toBe(`Error`);
+    });
+
+    it('should return AuthzVerificationError if AuthzProvider.authenticate throws Error', async () => {
+      const req = { [PASSPORT_PROPERTY]: undefined };
+      const mockPayload = { userId: 1 };
+
+      // @ts-ignore
+      jest.mocked(jwt.verify).mockReturnValue(mockPayload);
+      jest.mocked(mockAuthzProvider.authenticate).mockImplementation(
+        jest.fn(() => {
+          throw new Error('Verification failed');
+        })
+      );
+
+      const [user, error] = await jwtRefreshAuthzGuard.validate(req);
+
+      expect(user).toBeNull();
+      expect(error).toBeInstanceOf(AuthzVerificationError);
+      expect(error.message).toBe(`Error: Verification failed`);
     });
   });
 });

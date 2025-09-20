@@ -2,7 +2,6 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { mixin } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { createSetCookieFn } from '../utils';
-import type { JwtAuthzOptions } from './jwt-authz.interface';
 import { createJwtAuthzAlsMiddleware, JwtAlsType } from './jwt-authz-als.middleware';
 
 jest.mock('@nestjs/common', () => {
@@ -30,27 +29,16 @@ beforeEach(() => {
 
 describe('Jwt Authz ALS Middleware', () => {
   const ALS_PROVIDER = 'ALS_PROVIDER';
-  const JWT_AUTHZ_OPTIONS = 'JWT_AUTHZ_OPTIONS';
 
   let middleware: InstanceType<ReturnType<typeof createJwtAuthzAlsMiddleware>>;
   let als: AsyncLocalStorage<JwtAlsType<unknown>>;
-  let jwtAuthzOptions: JwtAuthzOptions;
 
   beforeEach(async () => {
     als = new AsyncLocalStorage();
-    jwtAuthzOptions = {
-      jwt: {
-        secretOrPublicKey: '123456'
-      }
-    } as JwtAuthzOptions;
-    const JwtAuthzAlsMiddleware = createJwtAuthzAlsMiddleware([ALS_PROVIDER, JWT_AUTHZ_OPTIONS]);
+    const JwtAuthzAlsMiddleware = createJwtAuthzAlsMiddleware([ALS_PROVIDER]);
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        JwtAuthzAlsMiddleware,
-        { provide: ALS_PROVIDER, useValue: als },
-        { provide: JWT_AUTHZ_OPTIONS, useValue: jwtAuthzOptions }
-      ]
+      providers: [JwtAuthzAlsMiddleware, { provide: ALS_PROVIDER, useValue: als }]
     }).compile();
 
     middleware = module.get<InstanceType<typeof JwtAuthzAlsMiddleware>>(JwtAuthzAlsMiddleware);
@@ -73,7 +61,6 @@ describe('Jwt Authz ALS Middleware', () => {
         user: undefined,
         jwtVerifiedBy: undefined,
         allowAnonymous: undefined,
-        authOptions: jwtAuthzOptions,
         guardResult: undefined,
         setCookie: expect.any(Function)
       });

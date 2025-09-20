@@ -15,7 +15,6 @@ import { createJwtAuthzGuard, createJwtRefreshAuthzGuard } from './jwt-authz.gua
 import { normalizedJwtAuthzModuleOptions } from './jwt-authz.interface';
 import { createJwtAuthzModule } from './jwt-authz.module';
 import { createJwtAuthzService } from './jwt-authz.service';
-import { createJwtStrategy, createRefreshStrategy } from './jwt-authz.strategy';
 import { createJwtAuthzAlsMiddleware } from './jwt-authz-als.middleware';
 
 jest.mock('@nestjs/common', () => {
@@ -87,16 +86,6 @@ jest.mock('./jwt-authz.service', () => {
   };
 });
 
-jest.mock('./jwt-authz.strategy', () => {
-  const actual = jest.requireActual('./jwt-authz.strategy');
-
-  return {
-    ...actual,
-    createJwtStrategy: jest.fn(actual.createJwtStrategy),
-    createRefreshStrategy: jest.fn(actual.createRefreshStrategy)
-  };
-});
-
 interface Payload {
   payloadId1: string;
 }
@@ -134,10 +123,6 @@ describe('JWT Authz Module', () => {
 
       const id = `${PREFIX}${jest.mocked(uid).mock.results[0].value}`;
 
-      // strategy tokens
-      const JWT_STRATEGY = `${id}_JWT_STRATEGY`;
-      const JWT_REFRESH_STRATEGY = `${id}_REFRESH_STRATEGY`;
-
       // provider tokens
       const AUTHZ_PROVIDER = `${id}_AUTHZ_PROVIDER`;
       const ALS_PROVIDER = `${id}_ALS_PROVIDER`;
@@ -147,24 +132,17 @@ describe('JWT Authz Module', () => {
       const JWT_META_KEY = `${id}_JWT_META_KEY`;
       const JWT_REFRESH_META_KEY = `${id}_REFRESH_META_KEY`;
 
-      expect(createJwtStrategy).toHaveBeenCalledTimes(1);
-      expect(createJwtStrategy).toHaveBeenCalledWith([JWT_STRATEGY, AUTHZ_PROVIDER, ALS_PROVIDER]);
-
-      expect(createRefreshStrategy).toHaveBeenCalledTimes(1);
-      expect(createRefreshStrategy).toHaveBeenCalledWith([JWT_REFRESH_STRATEGY, AUTHZ_PROVIDER, ALS_PROVIDER]);
-
       expect(createJwtAuthzService).toHaveBeenCalledTimes(1);
       expect(createJwtAuthzService).toHaveBeenCalledWith([AUTHZ_PROVIDER, JWT_AUTHZ_OPTIONS, ALS_PROVIDER]);
 
       expect(createJwtAuthzAlsMiddleware).toHaveBeenCalledTimes(1);
-      expect(createJwtAuthzAlsMiddleware).toHaveBeenCalledWith([ALS_PROVIDER, JWT_AUTHZ_OPTIONS]);
+      expect(createJwtAuthzAlsMiddleware).toHaveBeenCalledWith([ALS_PROVIDER]);
 
       expect(createJwtRefreshAuthzGuard).toHaveBeenCalledTimes(1);
-      expect(createJwtRefreshAuthzGuard).toHaveBeenCalledWith([JWT_REFRESH_STRATEGY, JWT_AUTHZ_OPTIONS]);
+      expect(createJwtRefreshAuthzGuard).toHaveBeenCalledWith([JWT_AUTHZ_OPTIONS, AUTHZ_PROVIDER, ALS_PROVIDER]);
 
       expect(createJwtAuthzGuard).toHaveBeenCalledTimes(1);
       expect(createJwtAuthzGuard).toHaveBeenCalledWith([
-        JWT_STRATEGY,
         AUTHZ_PROVIDER,
         JWT_AUTHZ_OPTIONS,
         ALS_PROVIDER,
@@ -387,27 +365,8 @@ describe('JWT Authz Module', () => {
         expect(jwtAuthzOptions).toEqual(jest.mocked(normalizedJwtAuthzModuleOptions).mock.results[0].value);
       });
 
-      it('should provide JwtStrategy', () => {
-        const jwtStrategy = module.get(jest.mocked(createJwtStrategy).mock.results[0].value);
-
-        expect(jwtStrategy).toBeDefined();
-      });
-
-      it('should provide RefreshStrategy', () => {
-        const RefreshStrategy = module.get(jest.mocked(createRefreshStrategy).mock.results[0].value);
-
-        expect(RefreshStrategy).toBeDefined();
-      });
-
       it('should call mergeDynamicModuleConfigs', () => {
         expect(mergeDynamicModuleConfigs).toHaveBeenCalledTimes(2);
-      });
-
-      it('should only provide JwtStrategy & RefreshStrategy once', () => {
-        const secondCalled = AuthzModule.register(mockJwtAuthzOptions);
-
-        expect(secondCalled.providers).not.toContain(jest.mocked(createJwtStrategy).mock.results[0].value);
-        expect(secondCalled.providers).not.toContain(jest.mocked(createRefreshStrategy).mock.results[0].value);
       });
 
       it('should call createOnceAdapterShimProvider', () => {
@@ -468,32 +427,8 @@ describe('JWT Authz Module', () => {
         expect(jwtAuthzOptions).toEqual(jest.mocked(normalizedJwtAuthzModuleOptions).mock.results[0].value);
       });
 
-      it('should provide JwtStrategy', () => {
-        const jwtStrategy = module.get(jest.mocked(createJwtStrategy).mock.results[0].value);
-
-        expect(jwtStrategy).toBeDefined();
-      });
-
-      it('should provide RefreshStrategy', () => {
-        const RefreshStrategy = module.get(jest.mocked(createRefreshStrategy).mock.results[0].value);
-
-        expect(RefreshStrategy).toBeDefined();
-      });
-
       it('should call mergeDynamicModuleConfigs', () => {
         expect(mergeDynamicModuleConfigs).toHaveBeenCalledTimes(2);
-      });
-
-      it('should only provide JwtStrategy & RefreshStrategy once', () => {
-        const secondCalled = AuthzModule.registerAsync({
-          routes: '/path-a',
-          useFactory: () => {
-            return mockJwtAuthzOptions;
-          }
-        });
-
-        expect(secondCalled.providers).not.toContain(jest.mocked(createJwtStrategy).mock.results[0].value);
-        expect(secondCalled.providers).not.toContain(jest.mocked(createRefreshStrategy).mock.results[0].value);
       });
 
       it('should call createOnceAdapterShimProvider', () => {
