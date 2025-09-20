@@ -1,5 +1,11 @@
 # @nestjs-kitchen/authz
 
+## 4.0.0
+
+### Major Changes
+
+- e1e511d: break change: remove passport
+
 ## 3.1.0
 
 ### Minor Changes
