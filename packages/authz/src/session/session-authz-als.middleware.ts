@@ -13,7 +13,6 @@ export interface SessionAlsType<P, U> {
   user?: U;
   allowAnonymous?: boolean;
   guardResult?: boolean;
-  authOptions: SessionAuthzOptions;
   logIn: (user: P) => Promise<void>;
   logOut: () => Promise<void>;
   setCookie: (name: string, value: string, options?: Record<string, any>) => void;
@@ -35,7 +34,6 @@ export const createSessionAuthzAlsMiddleware = ([ALS_PROVIDER, SESSION_AUTHZ_OPT
         user: undefined,
         allowAnonymous: undefined,
         guardResult: undefined,
-        authOptions: this.sessionAuthzOptions,
         // ref: https://github.com/jaredhanson/passport/blob/217018dbc46dcd4118dd6f2c60c8d97010c587f8/lib/sessionmanager.js#L14
         logIn: async <T>(user: T) => {
           const prevSession = req.shims.getAllSession();

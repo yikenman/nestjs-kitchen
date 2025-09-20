@@ -98,7 +98,6 @@ describe('Session Authz ALS Middleware', () => {
       expect(store).toEqual({
         user: undefined,
         allowAnonymous: undefined,
-        authOptions: sessionAuthzOptions,
         guardResult: undefined,
         logIn: expect.any(Function),
         logOut: expect.any(Function),
