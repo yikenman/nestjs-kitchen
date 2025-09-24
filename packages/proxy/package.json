@@ -1,0 +1,69 @@
+{
+  "name": "@nestjs-kitchen/proxy",
+  "private": false,
+  "description": "Provides an HTTP proxy functionality in the NestJS style.",
+  "version": "0.0.1",
+  "homepage": "https://github.com/yikenman/nestjs-kitchen",
+  "repository": "https://github.com/yikenman/nestjs-kitchen",
+  "author": "yikenman",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rimraf dist && tsc -p tsconfig.build.json",
+    "dev": "rimraf dist && tsc -p tsconfig.build.json --watch",
+    "test": "jest",
+    "test:ci": "jest --coverage && jest --config ./test/jest-e2e.config.json",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/jest/bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.config.json",
+    "test:e2e:watch": "jest --config ./test/jest-e2e.config.json --watch",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "http-proxy-middleware": "^3.0.5"
+  },
+  "devDependencies": {
+    "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/platform-fastify": "^11.0.0",
+    "@nestjs/testing": "^11.0.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.13.9",
+    "@types/supertest": "^6.0.2",
+    "jest": "^30.0.5",
+    "rimraf": "^6.0.1",
+    "supertest": "^7.1.0",
+    "ts-jest": "^29.3.0",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.8.2"
+  },
+  "engines": {
+    "node": ">=20.13.0"
+  },
+  "keywords": [
+    "http-proxy",
+    "HTTP-Proxy",
+    "NextJS",
+    "NodeJS",
+    "proxy",
+    "Proxy"
+  ],
+  "optionalDependencies": {
+    "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/platform-fastify": "^11.0.0"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "rxjs": "^7.8.2"
+  }
+}
