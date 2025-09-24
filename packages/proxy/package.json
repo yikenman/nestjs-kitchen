@@ -2,7 +2,7 @@
   "name": "@nestjs-kitchen/proxy",
   "private": false,
   "description": "Provides an HTTP proxy functionality in the NestJS style.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "homepage": "https://github.com/yikenman/nestjs-kitchen",
   "repository": "https://github.com/yikenman/nestjs-kitchen",
   "author": "yikenman",
