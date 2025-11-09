@@ -2,7 +2,7 @@
   "name": "@nestjs-kitchen/headers",
   "private": false,
   "description": "An convenient way to add custom HTTP headers.",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "homepage": "https://github.com/yikenman/nestjs-kitchen",
   "repository": "https://github.com/yikenman/nestjs-kitchen",
   "author": "yikenman",
