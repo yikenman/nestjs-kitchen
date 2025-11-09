@@ -27,3 +27,4 @@ Convenient tools to serve your NextJS application.
 | ✅     | [`@nestjs-kitchen/cache-manager`](./packages/cache-manager/README.md)                | A better caching module for NestJS, fully compatible with [@nestjs/cache-manager](https://www.npmjs.com/package/@nestjs/cache-manager) v3.                    |
 | ✅     | [`@nestjs-kitchen/csrf`](./packages/csrf/README.md) | A CSRF module in NextJS.   |
 | ✅     | [`@nestjs-kitchen/proxy`](./packages/proxy/README.md) | Provides an HTTP proxy functionality in the NestJS style.   |
+| ✅     | [`@nestjs-kitchen/headers`](./packages/headers/README.md) | An convenient way to add custom HTTP headers.   |
