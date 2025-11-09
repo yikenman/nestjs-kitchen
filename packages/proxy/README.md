@@ -25,6 +25,28 @@ $ npm install --save @nestjs-kitchen/proxy
 
 ## Usage
 
+> Note: `rawBody` option should be enabled first. See [`Raw body`](https://docs.nestjs.com/faq/raw-body#raw-body).
+
+```ts
+// express
+const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+  rawBody: true,
+});
+```
+
+or 
+
+```ts
+// fastify
+const app = await NestFactory.create<NestFastifyApplication>(
+  AppModule,
+  new FastifyAdapter(),
+  {
+    rawBody: true,
+  },
+);
+```
+
 ### Example
 
 Register module:
