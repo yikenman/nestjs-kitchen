@@ -1,5 +1,11 @@
 # @nestjs-kitchen/mybatis-mapper
 
+## 2.0.3
+
+### Patch Changes
+
+- d0b1b52: fix type error
+
 ## 2.0.2
 
 ### Patch Changes
