@@ -2,7 +2,7 @@
   "name": "@nestjs-kitchen/mybatis-mapper",
   "private": false,
   "description": "A mybatis mapper in NextJS.",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "homepage": "https://github.com/yikenman/nestjs-kitchen",
   "repository": "https://github.com/yikenman/nestjs-kitchen",
   "author": "yikenman",

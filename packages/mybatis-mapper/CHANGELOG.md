@@ -1,5 +1,11 @@
 # @nestjs-kitchen/mybatis-mapper
 
+## 2.0.4
+
+### Patch Changes
+
+- a2efaf4: fix(mapper): default empty format
+
 ## 2.0.3
 
 ### Patch Changes
