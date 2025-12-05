@@ -6,6 +6,7 @@ import { globSync } from 'tinyglobby';
 import { MybatisMapperError } from './errors';
 import { MODULE_OPTIONS_TOKEN } from './module-builder';
 import type { MybatisMapperModuleOptions } from './types';
+import { isEmptyObject } from './utils';
 
 const xmlPatten = '*.xml';
 
@@ -86,15 +87,38 @@ export class MybatisMapper implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /**
+   * Generates a SQL statement using `mybatis-mapper`, based on a namespace
+   * and SQL ID defined in the MyBatis XML mappings.
+   *
+   * @param namespace The `<mapper namespace="...">` value in MyBatis XML files.
+   * @param sql       The `<select id="...">`, `<update id="...">`, etc. ID inside the XML.
+   * @param param     Optional parameter object for the SQL statement.
+   * @param format    Formatting configuration:
+   *                  - `false` disables formatting
+   *                  - an object overrides defaults via shallow merge
+   *                  - `undefined` results in using only defaults (if any)
+   *
+   * @throws MybatisMapperError Wraps any underlying `mybatis-mapper` error
+   *         to provide consistent error handling at this layer.
+   */
   getStatement = (
     namespace: string,
     sql: string,
     param?: Params,
-    format?: Format | { language: Format['language'] | {} }
+    format?: Format | { language: Format['language'] | {} } | false
   ) => {
     try {
-      // @ts-ignore
-      return mybatisMapper.getStatement(namespace, sql, param, { ...this.options.format, ...format });
+      let finalFormat: Format | undefined;
+
+      if (format !== false) {
+        const merged = { ...this.options.format, ...(format as Format) };
+        if (!isEmptyObject(merged)) {
+          finalFormat = merged;
+        }
+      }
+
+      return mybatisMapper.getStatement(namespace, sql, param, finalFormat);
     } catch (error) {
       throw new MybatisMapperError(error, error);
     }
