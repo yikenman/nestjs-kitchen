@@ -174,27 +174,91 @@ describe('MybatisMapper', () => {
 
       expect(close).toHaveBeenCalled();
     });
+
+    it('should not close watcher if not exist', async () => {
+      const close = jest.fn();
+      const fakeWatcher = { on: jest.fn().mockReturnThis(), close };
+      (chokidar.watch as jest.Mock).mockReturnValue(fakeWatcher);
+
+      service['initWatcher']();
+      // @ts-expect-error
+      service['watcher'] = undefined;
+      await service.onModuleDestroy();
+
+      expect(close).not.toHaveBeenCalled();
+    });
   });
 
   describe('getStatement', () => {
-    it('getStatement should wrap mybatis getStatement', () => {
-      const getStatementMock = mybatisMapper.getStatement as jest.Mock;
-      getStatementMock.mockReturnValue('SQL');
+    beforeEach(() => {
+      (mybatisMapper.getStatement as jest.Mock).mockReset();
+    });
+
+    it('should wrap mybatis getStatement', () => {
+      (mybatisMapper.getStatement as jest.Mock).mockReturnValue('SQL');
+
+      mockOptions.format = { indent: '2' };
 
       const result = service.getStatement('ns', 'id', { a: 1 });
       expect(result).toBe('SQL');
-      expect(getStatementMock).toHaveBeenCalledWith('ns', 'id', { a: 1 }, mockOptions.format);
+      expect(mybatisMapper.getStatement).toHaveBeenCalledWith('ns', 'id', { a: 1 }, mockOptions.format);
     });
 
     it('should throw MybatisMapperError when failed', () => {
       const err = new Error('test error');
-
-      const getStatementMock = mybatisMapper.getStatement as jest.Mock;
-      getStatementMock.mockImplementationOnce(() => {
+      (mybatisMapper.getStatement as jest.Mock).mockImplementationOnce(() => {
         throw err;
       });
 
       expect(() => service.getStatement('ns', 'id', { a: 1 })).toThrow(MybatisMapperError);
+    });
+
+    it('should not pass format when format is false', () => {
+      (mybatisMapper.getStatement as jest.Mock).mockReturnValue('SQL');
+
+      service.getStatement('ns', 'id', { a: 1 }, false);
+
+      expect(mybatisMapper.getStatement).toHaveBeenCalledWith('ns', 'id', { a: 1 }, undefined);
+    });
+
+    it('should merge custom format with default format', () => {
+      (mybatisMapper.getStatement as jest.Mock).mockReturnValue('SQL');
+
+      const custom = { language: 'postgres' };
+      service.getStatement('ns', 'id', { a: 1 }, custom);
+
+      expect(mybatisMapper.getStatement).toHaveBeenCalledWith(
+        'ns',
+        'id',
+        { a: 1 },
+        { ...mockOptions.format, ...custom }
+      );
+    });
+
+    it('should ignore format if merged result is empty object', () => {
+      (mybatisMapper.getStatement as jest.Mock).mockReturnValue('SQL');
+
+      service.getStatement('ns', 'id', { a: 1 }, {});
+
+      expect(mybatisMapper.getStatement).toHaveBeenCalledWith('ns', 'id', { a: 1 }, undefined);
+    });
+
+    it('should ignore format if merged result values are all undefined', () => {
+      (mybatisMapper.getStatement as jest.Mock).mockReturnValue('SQL');
+
+      service.getStatement('ns', 'id', { a: 1 }, { language: undefined });
+
+      expect(mybatisMapper.getStatement).toHaveBeenCalledWith('ns', 'id', { a: 1 }, undefined);
+    });
+
+    it('should use default format if format is undefined', () => {
+      (mybatisMapper.getStatement as jest.Mock).mockReturnValue('SQL');
+
+      mockOptions.format = { indent: '2' };
+
+      service.getStatement('ns', 'id', { a: 1 }, undefined);
+
+      expect(mybatisMapper.getStatement).toHaveBeenCalledWith('ns', 'id', { a: 1 }, mockOptions.format);
     });
   });
 });

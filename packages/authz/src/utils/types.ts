@@ -44,13 +44,14 @@ export interface AuthzMetaParams {
   options?: AuthzDecoOptions;
 }
 
-export type AuthzDecoParams<MetaData> = IsUnknown<MetaData> extends false
-  ? IncludesUndefined<MetaData> extends false
-    ? [metaData: MetaData, options?: AuthzDecoBaseOptions]
-    : IsEqual<MetaData, undefined> extends false
-      ? [metaData?: MetaData, options?: AuthzDecoBaseOptions]
-      : [options?: AuthzDecoBaseOptions]
-  : [options?: AuthzDecoBaseOptions];
+export type AuthzDecoParams<MetaData> =
+  IsUnknown<MetaData> extends false
+    ? IncludesUndefined<MetaData> extends false
+      ? [metaData: MetaData, options?: AuthzDecoBaseOptions]
+      : IsEqual<MetaData, undefined> extends false
+        ? [metaData?: MetaData, options?: AuthzDecoBaseOptions]
+        : [options?: AuthzDecoBaseOptions]
+    : [options?: AuthzDecoBaseOptions];
 
 export type SingleOrArray<T> = T | T[];
 
