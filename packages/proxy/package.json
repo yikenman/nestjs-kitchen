@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "@nestjs/platform-express": "^11.0.0",
-    "@nestjs/platform-fastify": "^11.0.0",
+    "@nestjs/platform-fastify": "^11.1.10",
     "@nestjs/testing": "^11.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.13.9",
@@ -59,7 +59,7 @@
   ],
   "optionalDependencies": {
     "@nestjs/platform-express": "^11.0.0",
-    "@nestjs/platform-fastify": "^11.0.0"
+    "@nestjs/platform-fastify": "^11.1.10"
   },
   "peerDependencies": {
     "@nestjs/common": "^11.0.0",
