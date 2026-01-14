@@ -1,5 +1,12 @@
 # @nestjs-kitchen/authz
 
+## 4.0.1
+
+### Patch Changes
+
+- cc3e33c: chore(authz): update deps
+- cc3e33c: docs(authz): correct sample code
+
 ## 4.0.0
 
 ### Major Changes

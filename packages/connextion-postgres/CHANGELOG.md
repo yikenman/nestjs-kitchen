@@ -1,5 +1,11 @@
 # @nestjs-kitchen/connextion-postgres
 
+## 2.1.3
+
+### Patch Changes
+
+- 8fa0d62: fix(postgres): typo
+
 ## 2.1.2
 
 ### Patch Changes
