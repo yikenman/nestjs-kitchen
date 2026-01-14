@@ -34,7 +34,7 @@ export class PostgresInstance extends ConnextionInstance<PostgresInstanceOptions
   // Every instance should have its own als to avoid accessing wrong context.
   public [ALS] = new AsyncLocalStorage<ALSType>();
 
-  private listener1: Parameters<Pool['on']>[1] = (_cli) => {
+  private listener1: (client: PoolClient) => void = (_cli) => {
     _cli.on('error', this.listener2);
   };
   private listener2: (err: any) => void = (err) => {
