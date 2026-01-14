@@ -31,22 +31,37 @@ Simplest authentication & authorization module in NextJS.
 Once completed NestJS project setup, install this package and its dependencies: 
 
 ```bash
-$ npm install --save @nestjs-kitchen/authz
+$ npm install @nestjs-kitchen/authz -D @types/jsonwebtoken 
 ```
 
 ## Platform support
 
-Below platforms require different dependencies:
+This package supports multiple platforms (adapters).
+You only need to install the adapter(s) you plan to use.
 
-- For `@nestjs/platform-express`:
+- `@nestjs/platform-express`:
 
-  It requires [`express-session`](https://www.npmjs.com/package/express-session).
+  Requires [`express-session`](https://www.npmjs.com/package/express-session):
 
-- For `@nestjs/platform-fastify`:
+  ```bash
+  $ npm install express-session -D @types/express-session
+  ```
 
-  It requires [`@fastify/cookie`](https://www.npmjs.com/package/@fastify/cookie) and [`@fastify/session`](https://www.npmjs.com/package/@fastify/session).
+- `@nestjs/platform-fastify`:
 
-  Or [`@fastify/secure-session`](https://www.npmjs.com/package/@fastify/secure-session) instead.
+  Requires either:
+
+  1. [`@fastify/cookie`](https://www.npmjs.com/package/@fastify/cookie) with [`@fastify/session`](https://www.npmjs.com/package/@fastify/session):
+
+  ```bash
+  $ npm install @fastify/cookie @fastify/session
+  ```
+
+  2. Or [`@fastify/secure-session`](https://www.npmjs.com/package/@fastify/secure-session) instead:
+
+  ```bash
+  $ npm install @fastify/secure-session
+  ```
 
 ## Beark change
 

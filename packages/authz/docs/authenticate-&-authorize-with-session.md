@@ -24,7 +24,20 @@ or install [`@fastify/secure-session`](https://www.npmjs.com/package/@fastify/se
 npm install --save @fastify/secure-session
 ```
 
-## 1. Create file `authz.provider.ts`:
+## 1. Setup session module (e.g. express-session):
+```typescript
+import * as session from 'express-session';
+// somewhere in your initialization file
+app.use(
+  session({
+    secret: 'my-secret',
+    resave: false,
+    saveUninitialized: false,
+  }),
+);
+```
+
+## 2. Create file `authz.provider.ts`:
 
 ```typescript
 // authz.provider.ts
@@ -61,7 +74,7 @@ export class AuthzProvider extends AuthzProviderClass<Payload, User> {
 }
 ```
 
-## 2. Create file `authz.module.ts`:
+## 3. Create file `authz.module.ts`:
 
 ```typescript
 // authz.module.ts
@@ -79,7 +92,7 @@ export const {
 export type AuthzService = InstanceType<typeof AuthzService>;
 ```
 
-## 3. Use AuthzGuard in your business controller:
+## 4. Use AuthzGuard in your business controller:
 
 ```typescript
 // business.controller.ts
@@ -113,7 +126,7 @@ export class BusinessController {
 }
 ```
 
-## 4. Import AuthzModule
+## 5. Import AuthzModule
 
 ```typescript
 // business.module.ts
@@ -126,10 +139,6 @@ import { BusinessController } from './business.controller';
   imports: [
     // Import and configure session strategy
     AuthzModule.register({
-      session: {
-          name: 'custom-session-id-name',
-          secret: '1234567890'
-      },
       // Apply strategy to specific controllers.
       routes: [BusinessController]
     })
