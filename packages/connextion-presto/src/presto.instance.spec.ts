@@ -134,6 +134,52 @@ describe('PrestoInstance', () => {
       await expect(prestoInstance.execute(options)).rejects.toThrow(new PrestoError(err.message, err));
       expect(noop).toHaveBeenCalled();
     });
+
+    it('should allow to rewrite columns/data option', async () => {
+      const options = {
+        query: 'SELECT * FROM test',
+        columns: jest.fn(),
+        data: jest.fn()
+      };
+
+      const id = `${Math.random()}`;
+
+      prestoInstance['client']!.execute = jest.fn((opts: any) => {
+        opts.state(null, id, { state: 'RUNNING' });
+        opts.columns(null, [{ name: 'column1' }]);
+        opts.data(null, [['value1']]);
+
+        opts.success();
+      });
+
+      const result = await prestoInstance.execute(options);
+
+      expect(options.columns).toHaveBeenCalled();
+      expect(options.data).toHaveBeenCalled();
+    });
+
+    it('should not allow to rewrite state/success/error option', async () => {
+      const options = {
+        query: 'SELECT * FROM test',
+        state: jest.fn(),
+        error: jest.fn()
+      };
+
+      const id = `${Math.random()}`;
+
+      prestoInstance['client']!.execute = jest.fn((opts: any) => {
+        opts.state(null, id, { state: 'RUNNING' });
+        opts.columns(null, [{ name: 'column1' }]);
+        opts.data(null, [['value1']]);
+
+        opts.success();
+      });
+
+      const result = await prestoInstance.execute(options);
+
+      expect(options.state).not.toHaveBeenCalled();
+      expect(options.error).not.toHaveBeenCalled();
+    });
   });
 
   describe('end', () => {
