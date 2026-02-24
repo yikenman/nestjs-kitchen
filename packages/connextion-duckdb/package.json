@@ -26,8 +26,10 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/jest/bin/jest --runInBand",
     "test:watch": "jest --watch"
   },
+  "dependencies": {},
   "devDependencies": {
     "@nestjs-kitchen/connextion": "workspace:*",
+    "@nestjs/testing": "^11.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.13.9",
     "jest": "^30.0.5",
@@ -51,7 +53,7 @@
     "SQL"
   ],
   "peerDependencies": {
-    "@duckdb/node-api": "1.3.2-alpha.26",
+    "@duckdb/node-api": "^1.4.4-r.1",
     "@nestjs-kitchen/connextion": "workspace:*",
     "@nestjs/common": "^11.0.0"
   }

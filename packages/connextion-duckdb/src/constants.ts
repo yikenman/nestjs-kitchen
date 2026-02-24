@@ -1,3 +1,6 @@
+export const ALS = Symbol(`ALS`);
+export const GET_CON = Symbol(`GET_CON`);
+
 export const DEFAULT_INSTANCE_NAME = 'default';
 // Answer to the universe.
 export const MAX_LENGTH = 42;
@@ -18,3 +21,7 @@ export const DuckDBResultAsyncMethods = new Set([
 ]);
 
 export const DuckDBResultReaderAsyncMethods = new Set(['readAll', 'readUntil']);
+
+export const TRANSACTION_META = 'duckdb:transaction';
+
+export const ConnectionMethods = new Set(['run', 'runAndRead', 'stream', 'streamAndRead']);

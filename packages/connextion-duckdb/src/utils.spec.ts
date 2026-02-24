@@ -243,4 +243,30 @@ describe('Utility Functions', () => {
       expect((proxy as any).missingProperty).toBeUndefined();
     });
   });
+
+  describe('normalizeStrings', () => {
+    it('should normalize and remove duplicates', () => {
+      const input = ['  abc  ', 'abc', 'def', '', null] as string[];
+      const expected = ['abc', 'def'];
+      expect(utils.normalizeStrings(input)).toEqual(expected);
+    });
+
+    it('should handle empty value', () => {
+      expect(utils.normalizeStrings(undefined)).toEqual([]);
+    });
+  });
+
+  describe('plainPromise', () => {
+    it('should return resolved value as the first tuple item', async () => {
+      const [result, error] = await utils.plainPromise(Promise.resolve('success'));
+      expect(result).toBe('success');
+      expect(error).toBeUndefined();
+    });
+
+    it('should return error as the second tuple item', async () => {
+      const [result, error] = await utils.plainPromise(Promise.reject(new Error('fail')));
+      expect(result).toBeUndefined();
+      expect(error).toBeInstanceOf(Error);
+    });
+  });
 });

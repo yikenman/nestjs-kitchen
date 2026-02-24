@@ -8,21 +8,33 @@ import {
 import type { DuckDBResultReader } from '@duckdb/node-api/lib/DuckDBResultReader';
 import { Logger } from '@nestjs/common';
 import { ConnextionInstance } from '@nestjs-kitchen/connextion';
-import { CONNEXTION_DUCKDB_DEBUG, DuckDBResultAsyncMethods, DuckDBResultReaderAsyncMethods } from './constants';
+import { AsyncLocalStorage } from 'async_hooks';
+import {
+  ALS,
+  CONNEXTION_DUCKDB_DEBUG,
+  ConnectionMethods,
+  DuckDBResultAsyncMethods,
+  DuckDBResultReaderAsyncMethods,
+  GET_CON
+} from './constants';
 import { DuckDBError } from './errors';
-import type { DuckDBInstanceOptions } from './types';
+import type { ALSQueryType, ALSType, DuckDBInstanceOptions } from './types';
 import { createDebugLogger, createProxy, noop, removeEmptyValue } from './utils';
 
 export class DuckDBInstance extends ConnextionInstance<DuckDBInstanceOptions> {
   private instance: DuckDBInstanceClass | undefined = undefined;
   private logger: Logger;
+  private debug: boolean;
   private debugLogger: ReturnType<typeof createDebugLogger>;
+
+  // Every instance should have its own als to avoid accessing wrong context.
+  public [ALS] = new AsyncLocalStorage<ALSType>();
 
   constructor(name: string, options?: DuckDBInstanceOptions) {
     super(name, options);
     this.logger = new Logger(`DuckDB][${name}`);
-    const debug = Boolean(process.env[CONNEXTION_DUCKDB_DEBUG]) || options?.debug;
-    this.debugLogger = debug ? createDebugLogger(this.logger.debug.bind(this.logger), debug) : noop;
+    this.debug = Boolean(process.env[CONNEXTION_DUCKDB_DEBUG]) || Boolean(options?.debug);
+    this.debugLogger = this.debug ? createDebugLogger(this.logger.debug.bind(this.logger), this.debug) : noop;
   }
 
   async create(options: DuckDBInstanceOptions) {
@@ -37,9 +49,45 @@ export class DuckDBInstance extends ConnextionInstance<DuckDBInstanceOptions> {
     }
   }
 
-  dispose() {}
+  dispose() {
+    if (this.instance) {
+      this.instance.closeSync();
+    }
+  }
 
-  private async inner<T extends (...params: any[]) => any>(
+  public async [GET_CON]() {
+    if (!this.instance) {
+      throw new DuckDBError('instance not found');
+    }
+
+    const con = await this.instance.connect();
+
+    if (this.debug) {
+      return new Proxy(con, {
+        get: (target, prop, receiver) => {
+          const value = Reflect.get(target, prop, receiver);
+          if (typeof prop === 'string' && ConnectionMethods.has(prop)) {
+            return (...rest: any[]) => {
+              this.debugLogger({
+                NAME: this.name,
+                Type: prop,
+                SQL: rest[0],
+                VALUES: rest[1],
+                TYPES: rest[1]
+              });
+              return value.apply(target, rest);
+            };
+          }
+
+          return value;
+        }
+      });
+    }
+
+    return con;
+  }
+
+  private async innerNormal<T extends (...params: any[]) => any>(
     fun: string,
     ...params: Parameters<T>
   ): Promise<ReturnType<T>> {
@@ -48,17 +96,35 @@ export class DuckDBInstance extends ConnextionInstance<DuckDBInstanceOptions> {
     }
 
     try {
-      const con = await this.instance.connect();
-      this.debugLogger({
-        Type: fun,
-        SQL: params[0],
-        VALUES: params[1],
-        TYPES: params[1]
-      });
+      const con = await this[GET_CON]();
       return await con[fun](...params);
     } catch (error) {
       throw new DuckDBError(error, error);
     }
+  }
+
+  private async innerTransaction<T extends (...params: any[]) => any>(
+    fun: string,
+    ...params: Parameters<T>
+  ): Promise<ReturnType<T>> {
+    const store = this[ALS].getStore()!;
+    const con = await store.connection;
+    let err: Error | undefined = undefined;
+
+    const { promise, resolve } = Promise.withResolvers<ALSQueryType>();
+    store.queries.push(promise);
+    try {
+      return await con[fun](...params);
+    } catch (error) {
+      err = new DuckDBError(error, error);
+      throw err;
+    } finally {
+      resolve(err ?? true);
+    }
+  }
+
+  private inner<T extends (...params: any[]) => any>(fun: string, ...params: Parameters<T>): Promise<ReturnType<T>> {
+    return this[ALS].getStore() ? this.innerTransaction(fun, ...params) : this.innerNormal(fun, ...params);
   }
 
   async run(...params: Parameters<DuckDBConnection['run']>) {
@@ -88,12 +154,6 @@ export class DuckDBInstance extends ConnextionInstance<DuckDBInstanceOptions> {
 
     try {
       const con = await this.instance.connect();
-      this.debugLogger({
-        Type: 'createAppender',
-        SQL: params[0],
-        VALUES: params[1],
-        TYPES: params[1]
-      });
       const res = await con.createAppender(...params);
       return createProxy(res);
     } catch (error) {

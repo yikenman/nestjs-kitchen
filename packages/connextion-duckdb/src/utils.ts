@@ -1,4 +1,4 @@
-import { MAX_LENGTH } from './constants';
+import { MAX_LENGTH, TRANSACTION_META } from './constants';
 import { DuckDBError } from './errors';
 
 export const truncateString = (str: string, maxLength: number): string => {
@@ -105,4 +105,41 @@ export const createProxy = <T extends object>(obj: T, asyncMethods?: Set<string>
       }
     }
   });
+};
+
+// Ref: https://github.com/Papooch/nestjs-cls/blob/main/packages/core/src/utils/copy-method-metadata.ts#L10
+export const copyMethodMetadata = (from: any, to: any) => {
+  const metadataKeys = Reflect.getMetadataKeys(from);
+  metadataKeys.map((key) => {
+    const value = Reflect.getMetadata(key, from);
+    Reflect.defineMetadata(key, value, to);
+  });
+};
+
+export const getTransactionMetdata = (target: any) => {
+  return Reflect.getMetadata(TRANSACTION_META, target);
+};
+
+export const setTransactionMetdata = (target: any) => {
+  return Reflect.defineMetadata(TRANSACTION_META, true, target);
+};
+
+export const normalizeStrings = (strs?: string[]) => {
+  if (!strs) {
+    return [];
+  }
+  return Array.from(new Set(strs.filter(Boolean).map((ele) => ele.trim())));
+};
+
+export const plainPromise = async <T>(promise: Promise<T> | T): Promise<[T, undefined] | [undefined, any]> => {
+  let result: T | undefined = undefined;
+  let err: unknown = undefined;
+
+  try {
+    result = await promise;
+  } catch (error) {
+    err = error;
+  }
+
+  return [result, err] as any;
 };

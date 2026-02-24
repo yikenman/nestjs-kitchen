@@ -1,6 +1,6 @@
 import { DuckDBInstance as DuckDBInstanceClass } from '@duckdb/node-api';
 import { Logger } from '@nestjs/common';
-import { DuckDBResultAsyncMethods, DuckDBResultReaderAsyncMethods } from './constants';
+import { DuckDBResultAsyncMethods, DuckDBResultReaderAsyncMethods, GET_CON } from './constants';
 import { DuckDBInstance } from './duckdb.instance';
 import { DuckDBError } from './errors';
 import { createDebugLogger, createProxy } from './utils';
@@ -9,7 +9,13 @@ jest.mock('@nestjs/common', () => {
   const actual = jest.requireActual('@nestjs/common');
   return {
     ...actual,
-    Logger: jest.fn()
+    Logger: jest.fn().mockImplementation(() => ({
+      log: jest.fn(),
+      error: jest.fn(),
+      warn: jest.fn(),
+      debug: jest.fn(), // ✅ 必须有
+      verbose: jest.fn()
+    }))
   };
 });
 jest.mock('./utils', () => {
@@ -33,6 +39,7 @@ describe('DuckDBInstance', () => {
 
   beforeEach(() => {
     mockLogger = {
+      log: jest.fn(),
       debug: jest.fn(),
       error: jest.fn()
     } as unknown as jest.Mocked<Logger>;
@@ -56,6 +63,39 @@ describe('DuckDBInstance', () => {
 
     const debugInstance = new DuckDBInstance('testDB', { debug: true, path: ':memory:' });
     expect(createDebugLogger).toHaveBeenCalledWith(expect.any(Function), true);
+  });
+
+  describe('GET_CON', () => {
+    it('should throw error if instance not found', () => {
+      // @ts-ignore
+      instance.instance = undefined;
+      expect(() => instance[GET_CON]()).rejects.toThrow(new DuckDBError('instance not found'));
+    });
+
+    it('should return proxy in debug mode', async () => {
+      instance = new DuckDBInstance('testDB', { debug: true, path: ':memory:' });
+
+      (instance as any).logger = mockLogger;
+      (instance as any).debugLogger = mockDebugLogger;
+
+      await instance.create({ path: '' });
+
+      const con = await instance[GET_CON]();
+      await con.run('');
+
+      // @ts-ignore
+      expect(mockDebugLogger).toHaveBeenCalled();
+    });
+
+    it('should return connection in normal mode', async () => {
+      await instance.create({ path: '' });
+
+      const con = await instance[GET_CON]();
+
+      await con.run('');
+
+      expect(mockDebugLogger).not.toHaveBeenCalled();
+    });
   });
 
   describe('create', () => {
@@ -88,6 +128,8 @@ describe('DuckDBInstance', () => {
       await expect(instance['inner']('run', 'SELECT * FROM users')).rejects.toThrow(DuckDBError);
     });
 
+    instance = new DuckDBInstance('testDB', { debug: false, path: ':memory:' });
+
     it('should call inner and return result for run method', async () => {
       const value = { value: 'mock_result' };
       const mockConnect = jest.fn().mockResolvedValue({
@@ -97,7 +139,6 @@ describe('DuckDBInstance', () => {
       instance['instance'] = { connect: mockConnect } as any;
 
       const result = await instance.run('SELECT * FROM users');
-      expect(mockDebugLogger).toHaveBeenCalled();
       expect(createProxy).toHaveBeenCalledWith(value, DuckDBResultAsyncMethods);
       expect(result).toBe(jest.mocked(createProxy).mock.results[0].value);
     });
@@ -111,7 +152,6 @@ describe('DuckDBInstance', () => {
       instance['instance'] = { connect: mockConnect } as any;
 
       const result = await instance.runAndRead('SELECT * FROM users');
-      expect(mockDebugLogger).toHaveBeenCalled();
       expect(createProxy).toHaveBeenCalledWith(value, DuckDBResultReaderAsyncMethods);
       expect(result).toBe(jest.mocked(createProxy).mock.results[0].value);
     });
@@ -125,7 +165,6 @@ describe('DuckDBInstance', () => {
       instance['instance'] = { connect: mockConnect } as any;
 
       const result = await instance.stream('SELECT * FROM users');
-      expect(mockDebugLogger).toHaveBeenCalled();
       expect(createProxy).toHaveBeenCalledWith(value, DuckDBResultAsyncMethods);
       expect(result).toBe(jest.mocked(createProxy).mock.results[0].value);
     });
@@ -139,7 +178,6 @@ describe('DuckDBInstance', () => {
       instance['instance'] = { connect: mockConnect } as any;
 
       const result = await instance.streamAndRead('SELECT * FROM users');
-      expect(mockDebugLogger).toHaveBeenCalled();
       expect(createProxy).toHaveBeenCalledWith(value, DuckDBResultReaderAsyncMethods);
       expect(result).toBe(jest.mocked(createProxy).mock.results[0].value);
     });
@@ -161,7 +199,6 @@ describe('DuckDBInstance', () => {
       instance['instance'] = { connect: mockConnect } as any;
 
       const result = await instance.createAppender('test_table');
-      expect(mockDebugLogger).toHaveBeenCalled();
       expect(createProxy).toHaveBeenCalledWith(value);
       expect(result).toBe(jest.mocked(createProxy).mock.results[0].value);
     });

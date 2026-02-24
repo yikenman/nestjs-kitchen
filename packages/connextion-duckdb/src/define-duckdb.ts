@@ -8,6 +8,7 @@ import {
 } from '@nestjs-kitchen/connextion';
 import { DEFAULT_INSTANCE_NAME } from './constants';
 import { DuckDBInstance } from './duckdb.instance';
+import { createTransaction } from './transaction';
 import type { DuckDBInstanceOptions } from './types';
 
 const innerDefineDuckDB = defineConnextionBuilder({
@@ -36,6 +37,14 @@ export const defineDuckDB = <T extends string = typeof DEFAULT_INSTANCE_NAME>() 
      * - `registerAsync`
      *
      */
-    DuckDBModule
+    DuckDBModule,
+    /**
+     * A decorator that automatically enables transactions for the specific DuckDB
+     * service instances associated with the decorated method.
+     *
+     * - By default, transactions are enabled for all instances of the associated DuckDB service.
+     * - If specific instances are specified, only those instances will have transactions enabled.
+     */
+    Transaction: createTransaction<T>(DuckDB)
   };
 };
