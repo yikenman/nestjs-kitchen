@@ -1,5 +1,11 @@
 # @nestjs-kitchen/connextion-duckdb
 
+## 2.1.0
+
+### Minor Changes
+
+- 44163eb: feat(duck): transaction
+
 ## 2.0.7
 
 ### Patch Changes
