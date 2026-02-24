@@ -91,6 +91,12 @@ export class PrestoInstance extends ConnextionInstance<PrestoInstanceOptions> {
     let queryId: string = '';
 
     this.client.execute({
+      columns: (_, data) => {
+        columns.push(...data);
+      },
+      data: (_, data) => {
+        rawData.push(...data);
+      },
       ...options,
       state: (_, query_id, stats) => {
         queryId = query_id;
@@ -99,12 +105,6 @@ export class PrestoInstance extends ConnextionInstance<PrestoInstanceOptions> {
         } else {
           this.queryIdMap.set(query_id, stats.state);
         }
-      },
-      columns: (_, data) => {
-        columns.push(...data);
-      },
-      data: (_, data) => {
-        rawData.push(...data);
       },
       error: (error) => {
         this.debugLogger({
