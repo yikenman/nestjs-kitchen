@@ -1,5 +1,11 @@
 # @nestjs-kitchen/connextion-presto
 
+## 2.0.9
+
+### Patch Changes
+
+- 60c3d05: feat(presto): allow overwrite execute options
+
 ## 2.0.8
 
 ### Patch Changes
