@@ -22,6 +22,9 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v5
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+
       - name: Setup Node.js 24.x
         uses: actions/setup-node@v5
         with:
@@ -58,13 +61,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+
       - name: Setup Node.js 24.x
         uses: actions/setup-node@v5
         with:
           node-version: 24.x
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v5
 
       - name: Install Dependencies
         run: pnpm i
