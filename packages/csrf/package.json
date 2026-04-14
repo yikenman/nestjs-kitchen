@@ -41,14 +41,14 @@
     "@types/cookie-parser": "^1.4.8",
     "@types/express-session": "^1.18.2",
     "@types/jest": "^30.0.0",
-    "@types/node": "^22.13.9",
+    "@types/node": "^25.5.2",
     "@types/supertest": "^6.0.2",
     "cookie-parser": "^1.4.7",
     "express-session": "^1.18.2",
-    "jest": "^30.0.5",
+    "jest": "^30.3.0",
     "rimraf": "^6.0.1",
     "supertest": "^7.1.0",
-    "ts-jest": "^29.3.0",
+    "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.2"
@@ -63,17 +63,6 @@
     "NextJS",
     "NodeJS"
   ],
-  "optionalDependencies": {
-    "@fastify/cookie": "^11.0.2",
-    "@fastify/secure-session": "^8.2.0",
-    "@fastify/session": "^11.1.0",
-    "@nestjs/platform-express": "^11.0.0",
-    "@nestjs/platform-fastify": "^11.0.0",
-    "@types/cookie-parser": "^1.4.8",
-    "@types/express-session": "^1.18.2",
-    "cookie-parser": "^1.4.7",
-    "express-session": "^1.18.2"
-  },
   "peerDependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
