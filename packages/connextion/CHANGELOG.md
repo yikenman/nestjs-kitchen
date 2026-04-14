@@ -1,5 +1,11 @@
 # @nestjs-kitchen/connextion
 
+## 2.0.8
+
+### Patch Changes
+
+- 03bbff1: chore: fix cve & remove optdeps
+
 ## 2.0.7
 
 ### Patch Changes

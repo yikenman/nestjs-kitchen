@@ -1,5 +1,13 @@
 # @nestjs-kitchen/connextion-presto
 
+## 2.0.10
+
+### Patch Changes
+
+- 03bbff1: chore: fix cve & remove optdeps
+- Updated dependencies [03bbff1]
+  - @nestjs-kitchen/connextion@2.0.8
+
 ## 2.0.9
 
 ### Patch Changes

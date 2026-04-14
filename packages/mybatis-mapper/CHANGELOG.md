@@ -1,5 +1,11 @@
 # @nestjs-kitchen/mybatis-mapper
 
+## 2.0.5
+
+### Patch Changes
+
+- 03bbff1: chore: fix cve & remove optdeps
+
 ## 2.0.4
 
 ### Patch Changes
