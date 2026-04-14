@@ -1,5 +1,11 @@
 # @nestjs-kitchen/proxy
 
+## 1.0.2
+
+### Patch Changes
+
+- 03bbff1: chore: fix cve & remove optdeps
+
 ## 1.0.1
 
 ### Patch Changes

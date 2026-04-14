@@ -1,5 +1,11 @@
 # @nestjs-kitchen/authz
 
+## 4.0.2
+
+### Patch Changes
+
+- 03bbff1: chore: fix cve & remove optdeps
+
 ## 4.0.1
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @nestjs-kitchen/cache-manager
 
+## 2.0.6
+
+### Patch Changes
+
+- 03bbff1: chore: fix cve & remove optdeps
+
 ## 2.0.5
 
 ### Patch Changes
