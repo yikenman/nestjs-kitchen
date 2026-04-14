@@ -1,6 +1,5 @@
 {
-  "$schema": "./node_modules/syncpack/dist/schema.json",
-  "lintFormatting": false,
+  "$schema": "./node_modules/syncpack/schema.json",
   "sortPackages": true,
   "sortFirst": [
     "name",
