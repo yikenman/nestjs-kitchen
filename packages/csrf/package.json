@@ -20,13 +20,13 @@
   "scripts": {
     "build": "rimraf dist && tsc -p tsconfig.build.json",
     "dev": "rimraf dist && tsc -p tsconfig.build.json --watch",
-    "test": "jest",
-    "test:ci": "jest --coverage && jest --config ./test/jest-e2e.config.json",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/jest/bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.config.json",
-    "test:e2e:watch": "jest --config ./test/jest-e2e.config.json --watch",
-    "test:watch": "jest --watch"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:ci": "NODE_OPTIONS=--experimental-vm-modules jest --coverage && NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-e2e.config.json",
+    "test:cov": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
+    "test:debug": "NODE_OPTIONS=--experimental-vm-modules node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/jest/bin/jest --runInBand",
+    "test:e2e": "NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-e2e.config.json",
+    "test:e2e:watch": "NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-e2e.config.json --watch",
+    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch"
   },
   "dependencies": {
     "csrf": "^3.1.0"
